@@ -1,40 +1,41 @@
-from fastapi import FastAPI
-from sqlalchemy import Column,Integer,String
+from sqlalchemy import Column, Integer, String, DateTime, Date, Boolean, Text
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.sql import func
 from middleware.db import Base
+import uuid
 
-class Inspection_schedule:
-   _tablename="inspection_schedule"
-   id=column(UUID(as_uuid=True),primary_key=True,default=uuid.uuid4)
-   user_id=column(UUID(as_uuid=True)default=uuid.uuid4)
-   prop_id=column(UUID(as_uuid=True)default=uuid.uuid4)
-   type=column(string(50),nullable=false)
-   date=column(date(timezone=True),server_default=func.now())
-   status=column(string(20),nullable=false)
+class InspectionSchedule(Base):
+    __tablename__ = "inspection_schedule"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True))
+    prop_id = Column(UUID(as_uuid=True))
+    type = Column(String(50), nullable=False)
+    date = Column(Date, nullable=False)
+    status = Column(String(20), nullable=False)
 
-class Inspection:
-    _tablename="inspection"
-    id=column(UUID(as_uuid=True),primary_key=True,default=uuid.uuid4)
-   schedule_id=column(UUID(as_uuid=True)default=uuid.uuid4)
-   inspector_id=column(UUID(as_uuid=True)default=uuid.uuid4)
-   start_time=column(date(timezone=True),server_default=func.now())
-   end_time=column(date(timezone=True),server_default=func.now())
-   geo_verified=column(boolean(),nullable=false)
+class Inspection(Base):
+    __tablename__ = "inspection"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    schedule_id = Column(UUID(as_uuid=True))
+    inspector_id = Column(UUID(as_uuid=True))
+    start_time = Column(DateTime(timezone=True))
+    end_time = Column(DateTime(timezone=True))
+    geo_verified = Column(Boolean, nullable=False, default=False)
 
-class Checklist:
-   _tablename="checklist"
-   id=column(UUID(as_uuid=True),primary_key=True,default=uuid.uuid4)
-   inspection_id=column(UUID(as_uuid=True)default=uuid.uuid4)
-   area_name=column(string(100),nullable=false)
-   status=column(string(20),nullable=false)
-   remark=column(text,nullable=false)
+class Checklist(Base):
+    __tablename__ = "checklist"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    inspection_id = Column(UUID(as_uuid=True))
+    area_name = Column(String(100), nullable=False)
+    status = Column(String(20), nullable=False)
+    remark = Column(Text, nullable=False)
 
-class Inspection_package:
-   _tablename="inspection_package"
-    id=column(UUID(as_uuid=True),primary_key=True,default=uuid.uuid4)
-    package_name=column(string(50),nullable=false)
-    description=column(text(),nullable=false)
-    price=column(integer(),nullable=false)  
-   
+class InspectionPackage(Base):
+    __tablename__ = "inspection_package"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    package_name = Column(String(50), nullable=False)
+    description = Column(Text, nullable=False)
+    price = Column(Integer, nullable=False)
 
 
 
