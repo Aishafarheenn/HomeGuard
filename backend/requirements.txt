@@ -4,3 +4,4 @@ python-dotenv>=1.0.0
 sqlalchemy>=2.0.0
 psycopg2-binary>=2.9.0  # PostgreSQL driver (optional - only needed if using PostgreSQL)
 alembic>=1.13.0
+python-jose==3.5.0
