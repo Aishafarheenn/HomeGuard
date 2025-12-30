@@ -3,7 +3,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from middleware.db import Base
 import uuid
-from sqlalchemy.orm import relationships
+from sqlalchemy.orm import relationship
 
 class InspectionSchedule(Base):
     __tablename__ = "inspection_schedule"
@@ -14,10 +14,10 @@ class InspectionSchedule(Base):
     date = Column(Date, nullable=False)
     status = Column(String(20), nullable=False)
 
-    # relationships
-    inspection=relationships("Inspection", back_populates="inspection_schedule")
-    users=relationships("User",back_populates="inspection_schedule")
-    properties=relationships("Property",back_populates="inspection_schedule")
+    # relationship
+    inspection=relationship("Inspection", back_populates="inspection_schedule")
+    users=relationship("User",back_populates="inspection_schedule")
+    properties=relationship("Property",back_populates="inspection_schedule")
     
 
 class Inspection(Base):
@@ -29,10 +29,10 @@ class Inspection(Base):
     end_time = Column(DateTime(timezone=True))
     geo_verified = Column(Boolean, nullable=False, default=False)
 
-    # relationships
-    inspection_schedule = relationships("InspectionSchedule",back_populates="inspection")
-    inspector=relationships("Inspector",back_populates="inspection")
-    checklist=relationships("Checklist",back_populates="inspection")
+    # relationship
+    inspection_schedule = relationship("InspectionSchedule",back_populates="inspection")
+    inspector=relationship("Inspector",back_populates="inspection")
+    checklist=relationship("Checklist",back_populates="inspection")
 
 class Checklist(Base):
     __tablename__ = "checklist"
@@ -42,8 +42,8 @@ class Checklist(Base):
     status = Column(String(20), nullable=False)
     remark = Column(Text, nullable=False)
 
-    # relationships
-    inspection=relationships("Inspection",back_populates="checklist")
+    # relationship
+    inspection=relationship("Inspection",back_populates="checklist")
 
 class InspectionPackage(Base):
     __tablename__ = "inspection_package"

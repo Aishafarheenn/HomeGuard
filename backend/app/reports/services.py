@@ -15,5 +15,5 @@ def create_Evidence(db:Session,data:EvidenceCreate):
     db.refresh(new_Evidence)
     return new_Evidence
 
-   def get_all_Evidence(db:Session):
+def get_all_Evidence(db:Session):
     return db.query(Evidence).all() 

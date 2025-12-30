@@ -1,10 +1,9 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, Float
 from middleware.db import Base
 from sqlalchemy.dialects.postgresql import UUID
-from geoalchemy2 import Geography
 import uuid
 from sqlalchemy.sql import func
-from sqlalchemy.orm import relationships
+from sqlalchemy.orm import relationship
 
 
 class Property(Base):
@@ -12,8 +11,8 @@ class Property(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True))
     address = Column(String, nullable=False)
-    lattitude = Column(Geography(geometry_type='POINT', srid=4326))
-    longitude = Column(Geography(geometry_type='POINT', srid=4326))
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    inspection_schedule=relationships("InspectionSchedule",back_populates="properties")  
+    inspection_schedule=relationship("InspectionSchedule",back_populates="properties")  

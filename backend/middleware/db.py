@@ -275,6 +275,25 @@ def init_db():
         print(f"Warning: Could not check database status: {e}")
         db_exists = False
     
+    # Enable PostGIS extension for PostgreSQL if needed
+    if IS_POSTGRESQL:
+        try:
+            with engine.begin() as conn:
+                # Check if PostGIS extension exists and enable it
+                result = conn.execute(text(
+                    "SELECT 1 FROM pg_extension WHERE extname = 'postgis'"
+                ))
+                if result.fetchone() is None:
+                    # Try to enable PostGIS extension
+                    try:
+                        conn.execute(text("CREATE EXTENSION IF NOT EXISTS postgis"))
+                        print("✓ PostGIS extension enabled")
+                    except Exception as postgis_error:
+                        print(f"⚠ Warning: Could not enable PostGIS extension: {postgis_error}")
+                        print("   You may need to install PostGIS or grant CREATE privileges")
+        except Exception as e:
+            print(f"⚠ Warning: Could not check/enable PostGIS extension: {e}")
+    
     # Create all tables (SQLAlchemy will skip if they already exist)
     try:
         Base.metadata.create_all(bind=engine)

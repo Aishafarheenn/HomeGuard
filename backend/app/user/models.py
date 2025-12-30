@@ -3,7 +3,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from middleware.db import Base
 import uuid
-from sqlalchemy.orm import relationships
+from sqlalchemy.orm import relationship
 
 
 
@@ -17,4 +17,4 @@ class User(Base):
     country = Column(String(100), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    inspection_schedule=relationships("InspectionSchedule",back_populates="users")
+    inspection_schedule=relationship("InspectionSchedule",back_populates="users")

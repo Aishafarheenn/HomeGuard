@@ -5,7 +5,7 @@ from app.properties import schemas as property_schemas
 
 from middleware.db import get_db
 
-router = APIRouter(prifix="/property",tags=["Property"])
+router = APIRouter(prefix="/property",tags=["Property"])
 
 @router.post("/create",response_model=property_schemas.PropertyResponse)
 def add_property(payload:property_schemas.PropertyCreate, db:Session=Depends(get_db)):
