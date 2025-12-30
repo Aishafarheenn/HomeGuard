@@ -3,6 +3,7 @@ from auth import schemas as auth_schemas
 from auth import services as auth_services
 from middleware import utils as middleware_utils
 from sqlalchemy.orm import Session
+from middleware.db import get_db
 from dotenv import load_dotenv 
 import os
 load_dotenv() 

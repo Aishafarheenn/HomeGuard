@@ -221,6 +221,7 @@ def init_db():
     Call this function when the application starts.
     """
     # Import all models here to ensure they are registered with Base
+    import middleware.models
     # This will be populated as you create model files
     # Example: from app.models import User, Student, Parent, Admin
     

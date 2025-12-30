@@ -2,9 +2,8 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 import uvicorn
 from middleware.db import init_db
-from properties.routers import router as property_router
-from reports.routers import router as Evidence_router
-
+from app.admin.routers import router as admin_routers
+# from app.inspection import routers as inspection_routers
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Initialize database
@@ -14,8 +13,8 @@ async def lifespan(app: FastAPI):
     pass
 
 app = FastAPI(lifespan=lifespan)
-app.include_router(property_router)
-app.include_router(Evidence_router)
+app.include_router(admin_routers)
+# app.include_router(inspection_routers)
 
 @app.get("/")
 def read_root():

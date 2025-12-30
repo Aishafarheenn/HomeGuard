@@ -32,6 +32,7 @@ if config.config_file_name is not None:
 # Import all models here to ensure they are registered with Base
 # This will be populated as you create model files
 # Example: from app.models import User, Student, Parent, Admin
+from middleware.models import *
 
 target_metadata = Base.metadata
 

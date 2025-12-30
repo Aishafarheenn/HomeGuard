@@ -3,6 +3,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from middleware.db import Base
 import uuid
+from sqlalchemy.orm import relationships
 
 class Inspector(Base):
     __tablename__ = "inspector"
@@ -13,4 +14,7 @@ class Inspector(Base):
     phone = Column(String(20))
     status = Column(String(20), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # relationship
+    inspection=relationships("Inspection",back_populates="inspector")
 
