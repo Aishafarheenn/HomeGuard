@@ -4,7 +4,6 @@ from datetime import datetime
 
 
 class AdminCreate(BaseModel):
-    id:UUID
     name:str
     email:str
     password_hash:str
@@ -16,6 +15,13 @@ class AdminResponse(BaseModel):
     email:str
     phone:str
     created_at:datetime
+
+class AdminUpdate(BaseModel):
+    id:UUID
+    name:str
+    email:str
+    phone:str
+    
 
     class Config:
         from_attributes=True

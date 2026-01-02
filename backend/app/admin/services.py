@@ -26,3 +26,4 @@ def get_all_admin(db:Session):
         return db.query(admin_models.Admin).all()
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail=str(e))
+
