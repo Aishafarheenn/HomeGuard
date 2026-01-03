@@ -27,3 +27,23 @@ def get_all_property(db:Session):
         return db.query(property_models.Property).all()
     except Exception as e:
         raise HTTPException(status_code=500,detail=str(e))
+    
+def update_property_services(property_id:str, property_data:property_schemas.PropertyUpdate,db:Session):
+    property=db.query(property_models.Property).filter(property_models.Property.id == property_id).first()
+    if not property:
+        return None
+    for field, value in property_data.dict(exclude_unset=True).items():
+        setattr(property,field,value)
+
+        db.commit()
+        db.refresh(property)
+        return property
+
+def delete_property_services(property_id: str, db:Session):
+    property= db.query(property_models.Property).filter(property_models.Property.id == property_id).first()
+    if not property:
+        return None
+    
+    db.delete(property)
+    db.commit()
+    return True

@@ -13,6 +13,7 @@ class Admin(Base):
     phone = Column(String(20))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
+
 class Audit(Base):
     __tablename__ = "audit_log"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

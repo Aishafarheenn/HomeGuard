@@ -21,6 +21,7 @@ class AdminUpdate(BaseModel):
     name:str
     email:str
     phone:str
+
     
 
     class Config:

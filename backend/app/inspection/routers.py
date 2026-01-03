@@ -41,4 +41,33 @@ def get_user_by_id(user_id:UUID,db:Session=Depends(get_db)):
         return inspection_schedule_services.user_by_id(db)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    
+@router.put("/{inspection_id}", response_model=inspection_schemas.InspectionUpdate)
+def update_inspection(
+    inspection_id:str, 
+    inspection_data:inspection_schedule_schemas.InspectionUpdate, 
+    db:Session = Depends(get_db)):
+
+    inspection=inspection_services.update_inspection_services(
+        inspection_id=inspection_id,
+        inspection_data=inspection_data,
+        db=db
+    )
+    if not inspection:
+        raise HTTPException(status_code=404,detail="inspection not found")
+    return inspection
+
+@router.delete("/{inspection_id}")
+def delete_inspection(
+    inspection_id: str,
+    db:Session = Depends(get_db)
+):
+    result = inspection_services.delete_inspection_services(
+        inspection_id=inspection_id,
+        db=db
+    )
+    if not result:
+        raise HTTPException(status_code=404, detail="inspection not found")
+        return {"message":"inspection deleted successfully"}
+
 

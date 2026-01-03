@@ -16,5 +16,12 @@ class EvidenceResponse(BaseModel):
     notes: str
     created_at: datetime
 
+class EvidenceUpdate(BaseModel):
+    id:UUID
+    inspection_id:UUID
+    media_type:str
+    media_url:str
+    notes:str
+
     class Config:
         from_attributes = True

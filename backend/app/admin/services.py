@@ -27,3 +27,23 @@ def get_all_admin(db:Session):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail=str(e))
 
+def update_admin_services(admin_id: str, admin_data:admin_schemas.AdminUpdate, db:Session):
+    admin= db.query(admin_models.Admin).filter(admin_models.Admin.id == admin_id).first()
+    if not admin:
+        return None
+    for field, value in admin_data.dict(exclude_unset=True).items():
+        setattr(admin,field,value)
+
+    db.commit()
+    db.refresh(admin)
+    return admin
+
+def delete_admin_services(admin_id: str, db:Session):
+    admin= db.query(admin_models.Admin).filter(admin_models.Admin.id == admin_id).first()
+    if not admin:
+        return None
+    
+    db.delete(admin)
+    db.commit()
+    return True
+

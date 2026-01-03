@@ -62,4 +62,22 @@ def checklist_by_id(inspection_id:UUID , db:Session):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-# def update_inspection_services(inspection_id: str , inspections_data:inspection_schemas.InspectionUpdate, db:Session):
+def update_inspection_services(inspection_id: str , inspection_data:inspection_schemas.InspectionUpdate, db:Session):
+    inspection=db.query(inspection_models.Inspection).filter(inspection_models.Inspection.id == inspection_id).first()
+    if not inspection
+        return None
+    for field, value in inspection_data.dict(exclude_unset=True).items();
+        setattr(inspection,field,value)
+    
+    db.commit()
+    db.refresh(inspection)
+    return inspection
+
+def delete_inspection_services(inspection_id: str, db:Session):
+    inspection= db.query(inspection_models.Inspection).filter(inspection_models.Inspection.id == inspection_id).first()
+    if not inspection
+        return None
+    
+    db.delete(inspection)
+    db.commit()
+    return True

@@ -16,5 +16,13 @@ class PropertyResponse(BaseModel):
     longitude: float
     created_at: datetime
 
+class PropertyUpdate(BaseModel):
+    id:UUID
+    user_id:UUID
+    address:str
+    lattitude:float
+    longitude:float
+
+    
     class config:
         from_attributes =True

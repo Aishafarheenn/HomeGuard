@@ -23,5 +23,32 @@ def get_admin(db:Session=Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
+@router.put("/{admin_id}", response_model=admin_schemas.AdminUpdate)
+def update_admin(
+    admin_id:str, 
+    admin_data:admin_schemas.AdminUpdate, 
+    db:Session = Depends(get_db)):
+
+    admin=admin_services.update_admin_services(
+        admin_id=admin_id,
+        admin_data=admin_data,
+        db=db
+    )
+    if not admin:
+        raise HTTPException(status_code=404,detail="admin not found")
+    return admin
+
+@router.delete("/{admin_id}")
+def delete_admin(
+    admin_id: str,
+    db:Session = Depends(get_db)
+):
+    result = admin_services.delete_admin_services(
+        admin_id=admin_id,
+        db=db
+    )
+    if not result:
+        raise HTTPException(status_code=404, detail="admin not found")
+        return {"message":"Admin deleted successfully"}
 
     
