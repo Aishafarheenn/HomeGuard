@@ -3,6 +3,7 @@ from middleware.db import Base
 import uuid
 from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 class Evidence(Base):
     __tablename__ = "evidence"
@@ -13,3 +14,6 @@ class Evidence(Base):
     media_url = Column(String, nullable=False)
     notes = Column(String, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    #relationship
+    inspection=relationship("Inspection",black_populates="evidence")

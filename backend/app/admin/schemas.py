@@ -17,7 +17,6 @@ class AdminResponse(BaseModel):
     created_at:datetime
 
 class AdminUpdate(BaseModel):
-    id:UUID
     name:str
     email:str
     phone:str

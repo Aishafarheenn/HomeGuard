@@ -6,7 +6,6 @@ class InspectorCreate(BaseModel):
     email:str
     password_hash:str
     phone:str
-    status:str
 
 class InspectorResponse(BaseModel):
     id=UUID
@@ -14,12 +13,11 @@ class InspectorResponse(BaseModel):
     email:str
     password_hash:str
     phone:str
-    status:str
+    status:bool
     created_at:str
 
 class InspectorUpdate(BaseModel):
-    id:UUID
     name:str
     email:str
     phone:str
-    status:str
+    status:bool

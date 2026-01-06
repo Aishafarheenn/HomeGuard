@@ -17,7 +17,6 @@ class NotificationResponse(BaseModel):
     status:str
 
 class NotificationUpdate(BaseModel):
-    id:UUID
     user_id:UUID
     message:str
     status:str

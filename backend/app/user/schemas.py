@@ -19,7 +19,6 @@ class UserResponse(BaseModel):
     created_at:datetime
 
 class UserUpdate(BaseModel):
-    id:UUID
     name:str
     email:str
     phone:str

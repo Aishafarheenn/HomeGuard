@@ -12,7 +12,6 @@ def create_inspector(db:Session,data:inspector_schemas.InspectorCreate):
             email= data.email,
             password_hash= data.password_hash,
             phone= data.phone,
-            status= data.status,
         )
         db.add(new_inspector)
         db.commit()
@@ -46,3 +45,10 @@ def delete_inspector_services(inspector_id: str, db:Session):
     db.delete(inspector)
     db.commit()
     return True
+
+def get_inactive_inspector(db:Session):
+    try:
+        inspector_data=db.query(inspector_models.Inspector).filter(inspector_models.Inspector.status == False).all()
+        return inspector_data
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

@@ -3,19 +3,21 @@ from sqlalchemy.orm import Session
 from app.reports import schemas as reports_schemas
 from app.reports import models as reports_models
 
-def create_Evidence(db:Session,data:reports_schemas.EvidenceCreate)
+def create_Evidence(db:Session,data:reports_schemas.EvidenceCreate):
     try:
 
         new_Evidence = reports_models.Evidence(
-       inspection_id = data.inspection_id,
-       media_type = data.media_type,
-       media_url = data.media_url,
-       notes = data.notes,
-    )
-    db.add(new_Evidence)
-    db.commit()
-    db.refresh(new_Evidence)
-    return new_Evidence
+        inspection_id = data.inspection_id,
+        media_type = data.media_type,
+        media_url = data.media_url,
+        notes = data.notes,
+        )
+        db.add(new_Evidence)
+        db.commit()
+        db.refresh(new_Evidence)
+        return new_Evidence
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 def get_all_Evidence(db:Session):
     try:

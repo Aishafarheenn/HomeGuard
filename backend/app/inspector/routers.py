@@ -48,7 +48,14 @@ def delete_inspector(
     )
     if not result:
         raise HTTPException(status_code=404, detail="inspector not found")
-        return {"message":"inspector deleted successfully"}
+    return {"message":"inspector deleted successfully"}
+    
+@router.get("/inactive", response_model=list[inspector_schemas.InspectorCreate])
+def inactive_inspector(db:Session=Depends(get_db)):
+    try:
+        return inspector_services.get_inactive_inspector(db)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail=str(e))
 
 
 

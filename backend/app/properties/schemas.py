@@ -17,7 +17,6 @@ class PropertyResponse(BaseModel):
     created_at: datetime
 
 class PropertyUpdate(BaseModel):
-    id:UUID
     user_id:UUID
     address:str
     lattitude:float

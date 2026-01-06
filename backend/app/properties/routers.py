@@ -21,10 +21,10 @@ def get_property(db:Session=Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-@router.put("/{property_id}", response_model=property_schemas.propertyUpdate)
+@router.put("/{property_id}", response_model=property_schemas.PropertyResponse)
 def update_property(
     property_id:str, 
-    property_data:property_schemas.propertyUpdate, 
+    property_data:property_schemas.PropertyUpdate, 
     db:Session = Depends(get_db)):
 
     property=property_services.update_property_services(
@@ -47,7 +47,7 @@ def delete_property(
     )
     if not result:
         raise HTTPException(status_code=404, detail="property not found")
-        return {"message":"property deleted successfully"}
+    return {"message":"property deleted successfully"}
 
     
     

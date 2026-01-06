@@ -33,6 +33,7 @@ class Inspection(Base):
     inspection_schedule = relationship("InspectionSchedule",back_populates="inspection")
     inspector=relationship("Inspector",back_populates="inspection")
     checklist=relationship("Checklist",back_populates="inspection")
+    evidence=relationship("checklist",back_populates="inspection")
 
 class Checklist(Base):
     __tablename__ = "checklist"

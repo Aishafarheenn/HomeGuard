@@ -68,6 +68,12 @@ def delete_inspection(
     )
     if not result:
         raise HTTPException(status_code=404, detail="inspection not found")
-        return {"message":"inspection deleted successfully"}
+    return {"message":"inspection deleted successfully"}
 
+@router.get("/checking",response_model=list[inspection_schemas.InspectionResponse])
+def checklist_check(db:Session=Depends(get_db)):
+    try:
+        return inspection_services.get_checklist_check(db)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail=str(e))
 

@@ -64,9 +64,9 @@ def checklist_by_id(inspection_id:UUID , db:Session):
 
 def update_inspection_services(inspection_id: str , inspection_data:inspection_schemas.InspectionUpdate, db:Session):
     inspection=db.query(inspection_models.Inspection).filter(inspection_models.Inspection.id == inspection_id).first()
-    if not inspection
+    if not inspection:
         return None
-    for field, value in inspection_data.dict(exclude_unset=True).items();
+    for field, value in inspection_data.dict(exclude_unset=True).items():
         setattr(inspection,field,value)
     
     db.commit()
@@ -75,9 +75,16 @@ def update_inspection_services(inspection_id: str , inspection_data:inspection_s
 
 def delete_inspection_services(inspection_id: str, db:Session):
     inspection= db.query(inspection_models.Inspection).filter(inspection_models.Inspection.id == inspection_id).first()
-    if not inspection
+    if not inspection:
         return None
     
     db.delete(inspection)
     db.commit()
     return True
+
+def get_checklist_check(db:Session):
+    try:
+        checklist_data=db.query(inspection_models.Checklist).filter(inspection_models.Checklist.inspection_id == False).all()
+        return checklist_data
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
