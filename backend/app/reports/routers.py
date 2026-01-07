@@ -32,7 +32,7 @@ def update_evidence(
         db=db,
     )
     if not evidence_id:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="invalid id")
     return evidence_id
 
 @router.delete("/{evidence_id}")
@@ -45,7 +45,7 @@ def delete_evidence(
         db=db
     )
     if not result:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="data not found")
     return{"message":"Evidence deleted successfully"}
 
 @router.get("/Evidencecheck",response_model=list[reports_schemas.EvidenceResponse])

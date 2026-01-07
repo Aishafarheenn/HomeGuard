@@ -16,11 +16,14 @@ class EvidenceResponse(BaseModel):
     notes: str
     created_at: datetime
 
+    class Config:
+        from_attributes = True
+
+
 class EvidenceUpdate(BaseModel):
     inspection_id:UUID
     media_type:str
     media_url:str
     notes:str
 
-    class Config:
-        from_attributes = True
+    
