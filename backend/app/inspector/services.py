@@ -1,54 +1,70 @@
-from fastapi import FastAPI,HTTPException,status
-from sqlalchemy.orm import Session
+from fastapi import HTTPException, status
+from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from app.inspector import models as inspector_models
 from app.inspector import schemas as inspector_schemas
+from uuid import UUID
 
-
-
-def create_inspector(db:Session,data:inspector_schemas.InspectorCreate):
+def get_all_inspectors(db: Session):
     try:
-        new_inspector=inspector_models.Inspector(
-            full_name= data.full_name,
-            email= data.email,
-            password_hash= data.password_hash,
-            status= data.status,
-        )
+        return db.query(inspector_models.Inspector).options(
+            selectinload(inspector_models.Inspector.admin)
+        ).all()
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error: {str(e)}")
+
+def get_inspector_by_id(inspector_id: UUID, db: Session):
+    try:
+        inspector = db.query(inspector_models.Inspector).options(
+            selectinload(inspector_models.Inspector.admin)
+        ).filter(inspector_models.Inspector.id == inspector_id).first()
+        if not inspector:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Inspector not found")
+        return inspector
+    except HTTPException:
+        raise
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error: {str(e)}")
+
+def create_inspector(inspector_data: inspector_schemas.InspectorCreate, db: Session):
+    try:
+        new_inspector = inspector_models.Inspector(**inspector_data.dict())
         db.add(new_inspector)
         db.commit()
         db.refresh(new_inspector)
-
         return new_inspector
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail=str(e))
-def get_all_inspector(db:Session):
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already exists or invalid data")
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error: {str(e)}")
+
+def update_inspector(inspector_id: UUID, inspector_data: inspector_schemas.InspectorUpdate, db: Session):
     try:
-        return db.query(inspector_models.Inspector).all()
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail=str(e))
-
-def update_inspector_services(inspector_id: str,inspector_data:inspector_schemas.InspectorUpdate, db:Session):
-    inspector= db.query(inspector_models.Inspector).filter(inspector_models.Inspector.id == inspector_id).first()
-    if not inspector:
-        return None
-    for field, value in inspector_data.dict(exclude_unset=True).items():
-        setattr(inspector,field,value)
-
+        inspector = db.query(inspector_models.Inspector).filter(inspector_models.Inspector.id == inspector_id).first()
+        if not inspector:
+            return None
+        for field, value in inspector_data.dict(exclude_unset=True).items():
+            setattr(inspector, field, value)
         db.commit()
         db.refresh(inspector)
         return inspector
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already exists or invalid data")
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error: {str(e)}")
 
-def delete_inspector_services(inspector_id: str, db:Session):
-    inspector= db.query(inspector_models.Inspector).filter(inspector_models.Inspector.id == inspector_id).first()
-    if not inspector:
-        return None
-    
-    db.delete(inspector)
-    db.commit()
-    return True
-
-def get_inactive_inspector(db:Session):
+def delete_inspector(inspector_id: UUID, db: Session):
     try:
-        inspector_data=db.query(inspector_models.Inspector).filter(inspector_models.Inspector.status == False).all()
-        return inspector_data
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        inspector = db.query(inspector_models.Inspector).filter(inspector_models.Inspector.id == inspector_id).first()
+        if not inspector:
+            return None
+        db.delete(inspector)
+        db.commit()
+        return True
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error: {str(e)}")

@@ -1,23 +1,29 @@
 from pydantic import BaseModel
 from uuid import UUID
+from datetime import datetime
+from typing import Optional
 
-class InspectorCreate(BaseModel):
-    full_name:str
-    email:str
-    phone:str
-    status:str
+class InspectorBase(BaseModel):
+    full_name: str
+    email: str
+    phone: str
+    status: str
 
-class InspectorResponse(BaseModel):
-    id=UUID
-    full_name:str
-    email:str
-    phone:str
-    status:str
-    approved_by:UUID
-    created_at:str
+class InspectorCreate(InspectorBase):
+    pass
+
+class InspectorResponse(InspectorBase):
+    id: UUID
+    approved_by: Optional[UUID] = None
+    created_at: datetime
+    class Config:
+        from_attributes = True
 
 class InspectorUpdate(BaseModel):
-    name:str
-    email:str
-    phone:str
-    status:str
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    status: Optional[str] = None
+    approved_by: Optional[UUID] = None
+    class Config:
+        from_attributes = True

@@ -1,27 +1,27 @@
 from pydantic import BaseModel
 from uuid import UUID
 from datetime import datetime
+from typing import Optional
 
-class PropertyCreate(BaseModel):
+class PropertyBase(BaseModel):
     owner_id: UUID
     address: str
-    lattitude: float
+    latitude: float
     longitude: float
 
-class PropertyResponse(BaseModel):
+class PropertyCreate(PropertyBase):
+    pass
+
+class PropertyResponse(PropertyBase):
     id: UUID
-    owner_id: UUID
-    address: str
-    lattitude: float
-    longitude: float
     created_at: datetime
+    class Config:
+        from_attributes = True
 
 class PropertyUpdate(BaseModel):
-    owner_id:UUID
-    address:str
-    lattitude:float
-    longitude:float
-
-    
-    class config:
-        from_attributes =True
+    owner_id: Optional[UUID] = None
+    address: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    class Config:
+        from_attributes = True

@@ -1,10 +1,7 @@
-from fastapi import FastAPI, HTTPException, status
+from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from app.admin import models as admin_models
 from app.admin import schemas as admin_schemas
-
-
-
 
 def create_admin(db:Session,data:admin_schemas.AdminCreate):
     try:

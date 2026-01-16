@@ -14,6 +14,10 @@ class Inspector(Base):
     status = Column(String(20), nullable=False)
     approved_by = Column(UUID(as_uuid=True), ForeignKey("admins.id"))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # relationships
+    admin = relationship("Admin", back_populates="inspectors")
+    job_tickets = relationship("JobTickets", back_populates="inspector")
 
 
 
