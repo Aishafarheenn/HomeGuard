@@ -3,8 +3,6 @@ from app.inspection import schemas as inspection_schemas
 from app.inspection import services as inspection_services
 from app.inspection import schemas as inspection_schedule_schemas
 from app.inspection import services as inspection_schedule_services
-from app.inspection import schemas as checklist_schemas
-from app.inspection import services as checklist_services
 from sqlalchemy.orm import Session
 from middleware.db import get_db
 from uuid import UUID

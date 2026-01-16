@@ -4,18 +4,16 @@ from uuid import UUID
 
 class InspectionResponse(BaseModel):
     id:UUID
-    schedule_id:UUID
-    inspector_id:UUID
+    job_ticket_id:UUID
     start_time:datetime
     end_time:datetime
-    geo_verified:bool
+    overall_status:str
 
 class InspectionUpdate(BaseModel):
-    schedule_id:UUID
-    inspector_id:UUID
+    job_ticket_id:UUID
     start_time:datetime
     end_time:datetime
-    geo_verified:bool
+    over_all_status:str
     
     class Config:
         from_attributes=True

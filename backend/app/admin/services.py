@@ -9,7 +9,7 @@ from app.admin import schemas as admin_schemas
 def create_admin(db:Session,data:admin_schemas.AdminCreate):
     try:
         new_Admin=admin_models.Admin(
-            name = data.name,
+            full_name = data.full_name,
             email = data.email,
             password_hash = data.password_hash,
             phone = data.phone,

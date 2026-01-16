@@ -27,37 +27,18 @@ def inspection_by_id(inspection_id:UUID ,db:Session):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail=str(e))
 
-def get_all_user(db:Session):
+def get_all_jobtickets(db:Session):
     try:
-        user_data = db.query(inspection_models.InspectionSchedule)\
-            .options(selectinload(inspection_models.InspectionSchedule.users),\
-             selectinload(inspection_models.InspectionSchedule.properties),\
-             selectinload(inspection_models.InspectionSchedule.checklist)).all()
-        return user_data
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
-    
-def user_by_id(user_id:UUID , db:Session):
-    try:
-        user_data= db.query(inspection_models.InspectionSchedule)\
-            .options(selectinload(inspection_models.InspectionSchedule.users),\
-             selectinload(inspection_models.InspectionSchedule.properties),\
-             selectinload(inspection_models.InspectionSchedule.checklist)).filter(inspection_models.Inspection.id==user_id).first()
-        return user_data
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
-def get_all_checklist(db:Session):
-    try:
-        check_data = db.query(inspection_models.Checklist)\
-        .options(selectinload(inspection_models.Checklist.inspection_schedule)).all()
+        check_data = db.query(inspection_models.JobTickets)\
+        .options(selectinload(inspection_models.JobTickets.inspection_schedule)).all()
         return check_data
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
     
-def checklist_by_id(inspection_id:UUID , db:Session):
+def jobtickets_by_id(job_ticket_id:UUID , db:Session):
     try:
-        check_data = db.query(inspection_models.Checklist)\
-        .options(selectinload(inspection_models.Checklist.inspection_schedule)).filter(inspection_models.Checklist.id==inspection_id).first()
+        check_data = db.query(inspection_models.JobTickets)\
+        .options(selectinload(inspection_models.JobTickets.inspection_schedule)).filter(inspection_models.JobTickets.id==job_ticket_id).first()
         return check_data
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
@@ -82,9 +63,3 @@ def delete_inspection_services(inspection_id: str, db:Session):
     db.commit()
     return True
 
-def get_checklist_check(db:Session):
-    try:
-        checklist_data=db.query(inspection_models.Checklist).filter(inspection_models.Checklist.inspection_id == False).all()
-        return checklist_data
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

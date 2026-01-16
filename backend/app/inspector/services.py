@@ -8,10 +8,10 @@ from app.inspector import schemas as inspector_schemas
 def create_inspector(db:Session,data:inspector_schemas.InspectorCreate):
     try:
         new_inspector=inspector_models.Inspector(
-            name= data.name,
+            full_name= data.full_name,
             email= data.email,
             password_hash= data.password_hash,
-            phone= data.phone,
+            status= data.status,
         )
         db.add(new_inspector)
         db.commit()

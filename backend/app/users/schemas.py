@@ -4,15 +4,14 @@ from datetime import datetime
 
 
 class UserCreate(BaseModel):
-    name:str
+    full_name:str
     email:str
-    password_hash:str
     phone:str
     country:str
 
 class UserResponse(BaseModel):
     id:UUID
-    name:str
+    full_name:str
     email:str
     phone:str
     country:str

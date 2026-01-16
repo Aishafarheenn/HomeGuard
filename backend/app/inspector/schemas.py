@@ -2,22 +2,22 @@ from pydantic import BaseModel
 from uuid import UUID
 
 class InspectorCreate(BaseModel):
-    name:str
+    full_name:str
     email:str
-    password_hash:str
     phone:str
+    status:str
 
 class InspectorResponse(BaseModel):
     id=UUID
-    name:str
+    full_name:str
     email:str
-    password_hash:str
     phone:str
-    status:bool
+    status:str
+    approved_by:UUID
     created_at:str
 
 class InspectorUpdate(BaseModel):
     name:str
     email:str
     phone:str
-    status:bool
+    status:str

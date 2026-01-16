@@ -8,7 +8,7 @@ from app.notifications import schemas as notifications_schemas
 def create_notification(db:Session,data:notifications_schemas.NotificationCreate):
     try:
         new_notification=notifications_models.Notification(
-            user_id= data.user_id,
+            owner_id= data.owner_id,
             message= data.message,
             status= data.status,
         )
