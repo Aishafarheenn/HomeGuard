@@ -9,8 +9,8 @@ from app.inspection.routers import router as inspection_router
 from auth.routers import router as auth_router
 from app.properties.routers import router as properties_router
 from app.reports.routers import router as reports_router
-# from app.user.routers import router as user_router  # Uncomment when router is defined
-# from app.inspector.routers import router as inspector_router  # Uncomment when router is defined
+from app.users.routers import router as user_router  # Uncomment when router is defined
+from app.inspector.routers import router as inspector_router  # Uncomment when router is defined
 # from app.notifications.routers import router as notifications_router  # Uncomment when router is defined
 
 @asynccontextmanager
@@ -29,8 +29,8 @@ app.include_router(inspection_router)
 app.include_router(auth_router)
 app.include_router(properties_router)
 app.include_router(reports_router)
-# app.include_router(user_router)  # Uncomment when router is defined
-# app.include_router(inspector_router)  # Uncomment when router is defined
+app.include_router(user_router)  # Uncomment when router is defined
+app.include_router(inspector_router)  # Uncomment when router is defined
 # app.include_router(notifications_router)  # Uncomment when router is defined
 
 @app.get("/")

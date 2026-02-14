@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from auth import schemas as auth_schemas
 from app.admin import models as admin_models
 from app.inspector import models as inspector_models
-from app.user import models as user_models
+from app.users import models as user_models
 
 def UserLogin(db: Session, userdata: auth_schemas.LoginData):
     # Check admin

@@ -4,4 +4,4 @@ from app.inspector.models import *
 from app.notifications.models import *
 from app.properties.models import *
 from app.reports.models import *
-from app.user.models import *
+from app.users.models import *
