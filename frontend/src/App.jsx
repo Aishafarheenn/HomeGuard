@@ -1,7 +1,9 @@
-import React from "react"; 
+import React from "react";
+import InspectorRegistration from "./screens/InspectorRegistration";
 
-function App(){
-  
+function App() {
+  return <InspectorRegistration />;
 }
 
-export default App
+export default App;
+
