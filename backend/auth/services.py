@@ -11,6 +11,7 @@ def UserLogin(db: Session, userdata: auth_schemas.LoginData):
         admin_models.Admin.password_hash == userdata.password
     ).first()
     if admin:
+        admin.name=admin.full_name
         return admin, "admin"
     
     # Check inspector
