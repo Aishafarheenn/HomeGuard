@@ -23,97 +23,63 @@ function Login() {
   };
 
   return (
-    <div style={styles.container}>
-      <Card>
+    <div className="h-screen flex justify-center items-center bg-gray-100">
+      <Card className="w-96 overflow-hidden shadow-xl rounded-2xl">
+
         {/* Black Top Section */}
-        <div style={styles.topSection}>
-          <div style={styles.icon}>👤</div>
+        <div className="bg-black h-36 flex justify-center items-center rounded-bl-[60px]">
+          <div className="text-5xl text-white">👤</div>
         </div>
 
         {/* White Bottom Section */}
-        <div style={styles.bottomSection}>
-          <h2 style={styles.title}>Login</h2>
+        <div className="p-8 bg-white">
+          <h2 className="text-center text-2xl font-semibold mb-6">
+            Login
+          </h2>
 
-          <form onSubmit={handleSubmit}>
-            <label style={styles.label}>E-mail</label>
-            <Input
-              type="email"
-              name="email"
-              placeholder="hello@dream.com"
-              value={formData.email}
-              onChange={handleChange}
-            />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">E-mail</label>
+              <Input
+                type="email"
+                name="email"
+                placeholder="hello@dream.com"
+                value={formData.email}
+                onChange={handleChange}
+              />
+            </div>
 
-            <label style={styles.label}>Password</label>
-            <Input
-              type="password"
-              name="password"
-              placeholder="********"
-              value={formData.password}
-              onChange={handleChange}
-            />
+            <div>
+              <label className="text-sm font-medium">Password</label>
+              <Input
+                type="password"
+                name="password"
+                placeholder="********"
+                value={formData.password}
+                onChange={handleChange}
+              />
+            </div>
 
-            <div style={styles.forgot}>Forgot Password?</div>
+            <div className="text-right text-xs text-gray-500 cursor-pointer hover:text-black">
+              Forgot Password?
+            </div>
 
-            <Button type="submit">Login</Button>
+            <Button type="submit" className="w-full">
+              Login
+            </Button>
           </form>
 
-          <p style={styles.signupText}>
-            Don’t have an account? <span style={styles.signupLink}>Sign Up</span>
+          <p className="text-center text-sm mt-5">
+            Don’t have an account?{" "}
+            <span className="font-bold cursor-pointer hover:underline">
+              Sign Up
+            </span>
           </p>
         </div>
+
       </Card>
     </div>
   );
 }
-
-const styles = {
-  container: {
-    height: "100vh",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    background: "#f2f2f2",
-  },
-  topSection: {
-    background: "black",
-    height: "140px",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    borderBottomLeftRadius: "60px",
-  },
-  icon: {
-    fontSize: "50px",
-    color: "white",
-  },
-  bottomSection: {
-    padding: "30px",
-  },
-  title: {
-    textAlign: "center",
-    marginBottom: "20px",
-  },
-  label: {
-    fontSize: "14px",
-    fontWeight: "500",
-  },
-  forgot: {
-    textAlign: "right",
-    fontSize: "12px",
-    marginBottom: "15px",
-    cursor: "pointer",
-    color: "gray",
-  },
-  signupText: {
-    textAlign: "center",
-    marginTop: "15px",
-    fontSize: "14px",
-  },
-  signupLink: {
-    fontWeight: "bold",
-    cursor: "pointer",
-  },
-};
 
 export default Login;

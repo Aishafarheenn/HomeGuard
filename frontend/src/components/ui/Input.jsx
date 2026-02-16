@@ -1,6 +1,13 @@
 import React from "react";
 
-function Input({ type, name, placeholder, value, onChange }) {
+function Input({
+  type = "text",
+  name,
+  placeholder,
+  value,
+  onChange,
+  className = "",
+}) {
   return (
     <input
       type={type}
@@ -8,21 +15,17 @@ function Input({ type, name, placeholder, value, onChange }) {
       placeholder={placeholder}
       value={value}
       onChange={onChange}
-      style={styles.input}
       required
+      className={`w-full py-3 px-4 mb-4 
+                  rounded-lg 
+                  border border-gray-300 
+                  outline-none 
+                  focus:ring-2 focus:ring-black 
+                  focus:border-black 
+                  transition duration-200 
+                  ${className}`}
     />
   );
 }
-
-const styles = {
-  input: {
-    width: "100%",
-    padding: "12px",
-    marginBottom: "15px",
-    borderRadius: "10px",
-    border: "1px solid #ddd",
-    outline: "none",
-  },
-};
 
 export default Input;
