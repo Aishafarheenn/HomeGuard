@@ -5,6 +5,8 @@ import {BrowserRouter,Routes,Route} from "react-router-dom";
 import OwnerRegistration from "./screens/OwnerRegistration";
 import Login from "./screens/Login";
 import LandingPage from "./screens/LandingPage";
+import Dashboard from "./screens/dashboard/Dashboard";
+import DashboardLayout from "./components/layouts/DashboardLayout";
 
 // import Login from "./screens/Login";
 
@@ -15,6 +17,10 @@ function App() {
       <Route path="/" element={<LandingPage/>} />
       <Route path="/login" element={ <Login/> } />
       <Route path="/register/owner" element={<OwnerRegistration/>}/>
+      <Route path="/dashboard" element={<DashboardLayout/>}>
+        <Route index element = {<Dashboard/>}/>
+      </Route>
+      
     </Routes>
     </BrowserRouter>
  )
