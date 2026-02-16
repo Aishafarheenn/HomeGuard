@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import Card from "../components/ui/Card";
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
@@ -101,7 +102,7 @@ function OwnerRegistration() {
 
           <p className="text-center mt-4 text-sm">
             Already have an account?{" "}
-            <span className="font-bold cursor-pointer">Login</span>
+            <Link to="/login" className="font-bold cursor-pointer">Login</Link>
           </p>
         </div>
       </Card>

@@ -1,7 +1,9 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import Card from "../components/ui/Card";
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
+
 
 function Login() {
   const [formData, setFormData] = useState({
@@ -71,9 +73,9 @@ function Login() {
 
           <p className="text-center text-sm mt-5">
             Don’t have an account?{" "}
-            <span className="font-bold cursor-pointer hover:underline">
+            <Link to="/register/owner"  className="font-bold cursor-pointer hover:underline">
               Sign Up
-            </span>
+            </Link>
           </p>
         </div>
 
