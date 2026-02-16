@@ -13,15 +13,19 @@ function DashboardLayout() {
 
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: '▦' },
+    { path: '/dashboard/serviceitems', label: 'ServiceItems',icon: '**'},
     { path: '/dashboard/properties', label: 'Properties', icon: '🏠' },
     { path: '/dashboard/inspections', label: 'Inspections', icon: '🔍' },
-    { path: '/dashboard/profile', label: 'Profile', icon: '👤' },
+    { path: '/dashboard/inspector', label: 'Inspector', icon: '👤' },
+    { path:'/dashboard/owners',label: 'owner', icon:'👥' },
+    { path:'/dashboard/Jobtickets',label: 'Jobtickets', icon:'🎟️' },
+    
   ];
 
   return (
     <div className="flex min-h-screen w-full bg-gray-50">
       {open && (
-        <aside className="w-64 bg-slate-900 text-white p-5 flex flex-col">
+        <aside className="w-64 bg-black text-white p-5 flex flex-col">
           <div className="text-2xl font-bold mb-8">HomeGuard</div>
           <nav className="flex flex-col gap-2 flex-1">
             {navItems.map((item) => {
@@ -46,7 +50,7 @@ function DashboardLayout() {
           </nav>
           <button
             onClick={handleLogout}
-            className="w-full mt-4 px-4 py-3 rounded-lg bg-red-600 hover:bg-red-700 transition-all font-medium"
+            className="w-full mt-4 px-4 py-3 rounded-lg bg-blue-600 hover:bg-blue-600 transition-all font-medium"
           >
             Logout
           </button>

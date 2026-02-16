@@ -7,6 +7,12 @@ import LandingPage from "./screens/LandingPage";
 import DashboardLayout from "./components/layouts/DashboardLayout";
 import Dashboard from "./screens/Dashboard";
 import ServiceItems from "./screens/dashboard/ServiceItems";
+import Owners from "./screens/dashboard/Owners";
+import Properties from "./screens/dashboard/Properties";
+import Inspections from "./screens/dashboard/Inspections";
+import JobTickets from "./screens/dashboard/Jobtickets";
+import Inspector from "./screens/dashboard/Inspector";
+
 
 function App() {
  return (
@@ -18,6 +24,11 @@ function App() {
       <Route path="/dashboard" element={<DashboardLayout/>}>
         <Route index element={<Dashboard/>} />
         <Route path="serviceitems" element={<ServiceItems/>} />
+        <Route path="owners" element={ <Owners/>} />
+        <Route path="properties" element={<Properties/>}/>
+        <Route path="inspections" element={<Inspections/>}/>
+        <Route path="jobtickets" element={<JobTickets/>}/>
+        <Route path="inspector" element={<Inspector/>}/>
       </Route>
     </Routes>
     </BrowserRouter>
