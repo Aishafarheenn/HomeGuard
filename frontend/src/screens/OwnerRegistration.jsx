@@ -33,18 +33,16 @@ function OwnerRegistration() {
   };
 
   return (
-    <div style={styles.container}>
+    <div className="min-h-screen flex justify-center items-center bg-[#f2f2f2] p-5">
       <Card>
-        {/* Black Top Section */}
-        <div style={styles.topSection}>
-          <h2 style={{ color: "white" }}>Owner Registration</h2>
+        <div className="bg-black h-[120px] flex justify-center items-center rounded-br-[60px]">
+          <h2 className="text-white">Owner Registration</h2>
         </div>
 
-        {/* White Bottom Section */}
-        <div style={styles.bottomSection}>
+        <div className="p-[30px]">
           <form onSubmit={handleSubmit}>
 
-            <label style={styles.label}>Full Name</label>
+            <label className="text-sm font-medium">Full Name</label>
             <Input
               type="text"
               name="fullName"
@@ -53,7 +51,7 @@ function OwnerRegistration() {
               onChange={handleChange}
             />
 
-            <label style={styles.label}>E-mail</label>
+            <label className="text-sm font-medium">E-mail</label>
             <Input
               type="email"
               name="email"
@@ -62,7 +60,7 @@ function OwnerRegistration() {
               onChange={handleChange}
             />
 
-            <label style={styles.label}>Phone</label>
+            <label className="text-sm font-medium">Phone</label>
             <Input
               type="tel"
               name="phone"
@@ -71,7 +69,7 @@ function OwnerRegistration() {
               onChange={handleChange}
             />
 
-            <label style={styles.label}>Address</label>
+            <label className="text-sm font-medium">Address</label>
             <Input
               type="text"
               name="address"
@@ -80,7 +78,7 @@ function OwnerRegistration() {
               onChange={handleChange}
             />
 
-            <label style={styles.label}>Password</label>
+            <label className="text-sm font-medium">Password</label>
             <Input
               type="password"
               name="password"
@@ -89,7 +87,7 @@ function OwnerRegistration() {
               onChange={handleChange}
             />
 
-            <label style={styles.label}>Confirm Password</label>
+            <label className="text-sm font-medium">Confirm Password</label>
             <Input
               type="password"
               name="confirmPassword"
@@ -101,49 +99,14 @@ function OwnerRegistration() {
             <Button type="submit">Register Owner</Button>
           </form>
 
-          <p style={styles.loginText}>
+          <p className="text-center mt-4 text-sm">
             Already have an account?{" "}
-            <span style={styles.loginLink}>Login</span>
+            <span className="font-bold cursor-pointer">Login</span>
           </p>
         </div>
       </Card>
     </div>
   );
 }
-
-const styles = {
-  container: {
-    minHeight: "100vh",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    background: "#f2f2f2",
-    padding: "20px",
-  },
-  topSection: {
-    background: "black",
-    height: "120px",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    borderBottomRightRadius: "60px",
-  },
-  bottomSection: {
-    padding: "30px",
-  },
-  label: {
-    fontSize: "14px",
-    fontWeight: "500",
-  },
-  loginText: {
-    textAlign: "center",
-    marginTop: "15px",
-    fontSize: "14px",
-  },
-  loginLink: {
-    fontWeight: "bold",
-    cursor: "pointer",
-  },
-};
 
 export default OwnerRegistration;
