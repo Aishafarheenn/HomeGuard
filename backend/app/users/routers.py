@@ -23,7 +23,7 @@ def get_owner(owner_id: UUID, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-@router.post("", response_model=user_schemas.OwnerResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/create", response_model=user_schemas.OwnerResponse, status_code=status.HTTP_201_CREATED)
 def create_owner(owner_data: user_schemas.OwnerCreate, db: Session = Depends(get_db)):
     try:
         return user_services.create_owner(owner_data, db)

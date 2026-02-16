@@ -3,13 +3,15 @@ import { Link } from "react-router-dom";
 import Card from "../components/ui/Card";
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
+import { authServices } from "../services/requests/authServices";
 
 function OwnerRegistration() {
+  const[loading,setLoading ]=useState(false)
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
     phone: "",
-    address: "",
+    Country: "",
     password: "",
     confirmPassword: "",
   });
@@ -21,7 +23,7 @@ function OwnerRegistration() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
@@ -30,7 +32,16 @@ function OwnerRegistration() {
     }
 
     console.log(formData);
-    alert("Owner Account Created Successfully!");
+    setLoading(true)
+
+    try{
+      await authServices.OwnerRegistration(formData)
+      alert("Successfully Registered")
+    }catch (error){
+      alert("register not complete")
+    }finally{
+      setLoading(false)
+    }
   };
 
   return (
@@ -70,16 +81,25 @@ function OwnerRegistration() {
               onChange={handleChange}
             />
 
-            <label className="text-sm font-medium">Address</label>
-            <Input
-              type="text"
-              name="address"
-              placeholder="Enter address"
-              value={formData.address}
-              onChange={handleChange}
-            />
 
-            <label className="text-sm font-medium">Password</label>
+           
+            <label className="text-sm font-medium">Country</label>
+
+            <select
+              name="country"
+              value={formData.country}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded-xl p-3 mt-1 mb-4 focus:outline-none focus:ring-2
+               focus:ring-black"
+            >
+              <option value="">Select Country</option>
+              <option value="UAE"> UAE</option>
+              <option value="USA"> USA</option>
+              <option value="UK"> UK</option>
+              <option value="INDIA"> INDIA</option>
+            </select>
+
+             <label className="text-sm font-medium">Password</label>
             <Input
               type="password"
               name="password"

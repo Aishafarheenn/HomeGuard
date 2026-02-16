@@ -17,5 +17,17 @@ export const authServices = {
         
     },
 
-    
+    OwnerRegistration: async (formData) =>{
+        try{
+            const response = await api.post(endpoint.owner.create, {
+                formData
+            })
+            return response.data
+
+        }catch (error) {
+            const message =  error.response?.data?.detail || 'registration failed. please enter properly'
+            throw new Error(message)
+        }
+    }
+
 }
