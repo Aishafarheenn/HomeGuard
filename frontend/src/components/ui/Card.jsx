@@ -1,21 +1,15 @@
 import React from "react";
 
-function Card({ children }) {
+function Card({ children, className = "" }) {
   return (
-    <div style={styles.card}>
+    <div
+      className={`w-[350px] rounded-[25px] overflow-hidden 
+                  shadow-[0_20px_40px_rgba(0,0,0,0.15)] 
+                  bg-white ${className}`}
+    >
       {children}
     </div>
   );
 }
-
-const styles = {
-  card: {
-    width: "350px",
-    borderRadius: "25px",
-    overflow: "hidden",
-    boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
-    background: "#fff",
-  },
-};
 
 export default Card;

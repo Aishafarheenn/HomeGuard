@@ -1,24 +1,19 @@
 import React from "react";
 
-function Button({ children, type }) {
+function Button({ children, type = "button", className = "" }) {
   return (
-    <button type={type} style={styles.button}>
+    <button
+      type={type}
+      className={`w-full py-3 bg-black text-white 
+                  rounded-lg font-bold 
+                  cursor-pointer 
+                  hover:bg-gray-800 
+                  transition duration-300 
+                  ${className}`}
+    >
       {children}
     </button>
   );
 }
-
-const styles = {
-  button: {
-    width: "100%",
-    padding: "12px",
-    background: "black",
-    color: "white",
-    border: "none",
-    borderRadius: "10px",
-    fontWeight: "bold",
-    cursor: "pointer",
-  },
-};
 
 export default Button;
