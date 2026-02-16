@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import Card from "../components/ui/Card";
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
-import {login} from "../services/requests/authServices";
+import {authServices} from "../services/requests/authServices";
 
 function Login() {
   const[loading,setLoading ]=useState(false)
@@ -19,13 +19,13 @@ function Login() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     console.log(formData);
     setLoading(true)
 
     try{
-      await login (formData.email , formData.password)
+      await authServices.login (formData.email , formData.password)
       alert("login completed")
     } catch (error){
       alert("login failed" )
@@ -93,7 +93,7 @@ function Login() {
 
       </Card>
     </div>
-  
+  );
 }
 
 export default Login;

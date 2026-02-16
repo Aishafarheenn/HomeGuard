@@ -34,9 +34,9 @@ app.add_middleware(
 )
 
 # Include all routers
+app.include_router(auth_router)
 app.include_router(admin_router)
 app.include_router(inspection_router)
-app.include_router(auth_router)
 app.include_router(properties_router)
 app.include_router(reports_router)
 app.include_router(user_router)  # Uncomment when router is defined
@@ -48,4 +48,4 @@ def read_root():
     return {"message": "Hello FastAPI"}
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=True)
