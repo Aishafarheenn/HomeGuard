@@ -6,6 +6,7 @@ import Login from "./screens/Login";
 import LandingPage from "./screens/LandingPage";
 import DashboardLayout from "./components/layouts/DashboardLayout";
 import Dashboard from "./screens/Dashboard";
+import ServiceItems from "./screens/dashboard/ServiceItems";
 
 function App() {
  return (
@@ -16,6 +17,7 @@ function App() {
       <Route path="/register/owner" element={<OwnerRegistration/>}/>
       <Route path="/dashboard" element={<DashboardLayout/>}>
         <Route index element={<Dashboard/>} />
+        <Route path="serviceitems" element={<ServiceItems/>} />
       </Route>
     </Routes>
     </BrowserRouter>
