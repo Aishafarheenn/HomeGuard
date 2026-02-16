@@ -3,9 +3,10 @@ import { Link } from "react-router-dom";
 import Card from "../components/ui/Card";
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
-
+import {login} from "../services/requests/authServices";
 
 function Login() {
+  const[loading,setLoading ]=useState(false)
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -21,8 +22,19 @@ function Login() {
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log(formData);
-    alert("Login Successful!");
+    setLoading(true)
+
+    try{
+      await login (formData.email , formData.password)
+      alert("login completed")
+    } catch (error){
+      alert("login failed" )
+    } finally {
+      setLoading(false)
+    }
   };
+    
+  
 
   return (
     <div className="h-screen flex justify-center items-center bg-gray-100">
@@ -81,7 +93,7 @@ function Login() {
 
       </Card>
     </div>
-  );
+  
 }
 
 export default Login;
