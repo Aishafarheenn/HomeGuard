@@ -31,6 +31,8 @@ def create_inspector(inspector_data: inspector_schemas.InspectorCreate, db: Sess
     try:
         data = inspector_data.model_dump(exclude={"password"})
         data["password_hash"] = hash_password(inspector_data.password)
+        data["status"] = "pending"  # Public registration: admin must approve before login
+        data["approved_by"] = None
         new_inspector = inspector_models.Inspector(**data)
         db.add(new_inspector)
         db.commit()
@@ -59,6 +61,34 @@ def update_inspector(inspector_id: UUID, inspector_data: inspector_schemas.Inspe
     except SQLAlchemyError as e:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error: {str(e)}")
+
+def approve_inspector(inspector_id: UUID, admin_id: UUID, db: Session):
+    """Set inspector status to approved and set approved_by. Only admins should call this."""
+    inspector = db.query(inspector_models.Inspector).filter(
+        inspector_models.Inspector.id == inspector_id
+    ).first()
+    if not inspector:
+        return None
+    inspector.status = "approved"
+    inspector.approved_by = admin_id
+    db.commit()
+    db.refresh(inspector)
+    return inspector
+
+
+def reject_inspector(inspector_id: UUID, db: Session):
+    """Set inspector status to rejected."""
+    inspector = db.query(inspector_models.Inspector).filter(
+        inspector_models.Inspector.id == inspector_id
+    ).first()
+    if not inspector:
+        return None
+    inspector.status = "rejected"
+    inspector.approved_by = None
+    db.commit()
+    db.refresh(inspector)
+    return inspector
+
 
 def delete_inspector(inspector_id: UUID, db: Session):
     try:

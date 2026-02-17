@@ -17,13 +17,15 @@ def UserLogin(db: Session, userdata: auth_schemas.LoginData):
     if admin and verify_password(userdata.password, admin.password_hash):
         return admin, "admin"
 
-    # Check inspector
+    # Check inspector (only approved inspectors can login)
     inspector = db.query(inspector_models.Inspector).filter(
         inspector_models.Inspector.email == userdata.email
     ).first()
     if inspector and getattr(inspector, "password_hash", None) and verify_password(
         userdata.password, inspector.password_hash
     ):
+        if getattr(inspector, "status", None) != "approved":
+            return None, None, "pending_inspector"  # So router can return 403 with specific message
         return inspector, "inspector"
 
     # Check owner (User/Owner)
@@ -31,4 +33,4 @@ def UserLogin(db: Session, userdata: auth_schemas.LoginData):
     if user and verify_password(userdata.password, user.password_hash):
         return user, "owner"
 
-    return None, None
+    return None, None, None

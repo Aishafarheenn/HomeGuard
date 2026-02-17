@@ -6,6 +6,7 @@ import ProtectedRoute from './components/auth/ProtectedRoute'
 import LandingPage from './screens/LandingPage'
 import Login from './screens/Login'
 import OwnerRegistration from './screens/OwnerRegistration'
+import InspectorRegistration from './screens/InspectorRegistration'
 import DashboardLayout from './components/layouts/DashboardLayout'
 import Dashboard from './screens/dashboard/Dashboard'
 import ServiceItems from './screens/dashboard/ServiceItems'
@@ -24,6 +25,7 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register/owner" element={<OwnerRegistration />} />
+          <Route path="/register/inspector" element={<InspectorRegistration />} />
           <Route
             path="/dashboard"
             element={

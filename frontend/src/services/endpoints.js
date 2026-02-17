@@ -15,7 +15,11 @@ export const endpoint = {
   },
 
   inspector: {
-    create: `${BASE_URL}/inspector/create`,
+    create: `${BASE_URL}/inspectors`,
+    list: `${BASE_URL}/inspectors`,
+    getOne: (id) => `${BASE_URL}/inspectors/${id}`,
+    approve: (id) => `${BASE_URL}/inspectors/${id}/approve`,
+    reject: (id) => `${BASE_URL}/inspectors/${id}/reject`,
   },
 
   inspection: {

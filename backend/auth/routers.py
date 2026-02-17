@@ -10,8 +10,16 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/login")
 def login(userdata: auth_schemas.LoginData, db: Session = Depends(get_db)):
-    user, role = auth_services.UserLogin(db, userdata)
+    result = auth_services.UserLogin(db, userdata)
+    user = result[0] if isinstance(result, (list, tuple)) else result
+    role = result[1] if isinstance(result, (list, tuple)) and len(result) > 1 else None
+    reason = result[2] if isinstance(result, (list, tuple)) and len(result) > 2 else None
     if not user:
+        if reason == "pending_inspector":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Your inspector account is pending admin approval. You can sign in after an admin approves you.",
+            )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",

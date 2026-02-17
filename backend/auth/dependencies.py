@@ -44,3 +44,13 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     return CurrentUser(user_id=sub, role=role)
+
+
+def get_current_admin(current_user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
+    """Require current user to be admin. Use for admin-only endpoints."""
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
+        )
+    return current_user

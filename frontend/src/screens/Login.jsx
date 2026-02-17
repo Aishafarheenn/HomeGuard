@@ -20,6 +20,9 @@ function Login() {
     if (location.state?.registered) {
       setSuccessMessage('Account created. You can sign in now.')
     }
+    if (location.state?.registeredInspector) {
+      setSuccessMessage('Application submitted. You can sign in after an admin approves your account.')
+    }
   }, [location.state])
 
   const handleChange = (e) => {
@@ -152,7 +155,11 @@ function Login() {
           <p className="text-center text-slate-600 text-sm mt-8">
             Don't have an account?{' '}
             <Link to="/register/owner" className="font-semibold text-[#7C3AED] hover:underline">
-              Create account
+              Register as owner
+            </Link>
+            <span className="text-slate-400 mx-1">·</span>
+            <Link to="/register/inspector" className="font-semibold text-[#7C3AED] hover:underline">
+              Register as inspector
             </Link>
           </p>
           <p className="text-center mt-4">

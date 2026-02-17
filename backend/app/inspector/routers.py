@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.inspector import schemas as inspector_schemas
 from app.inspector import services as inspector_services
+from auth.dependencies import CurrentUser, get_current_admin
 from middleware.db import get_db
 from uuid import UUID
 
@@ -41,6 +42,32 @@ def update_inspector(inspector_id: UUID, inspector_data: inspector_schemas.Inspe
         raise
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+@router.patch("/{inspector_id}/approve", response_model=inspector_schemas.InspectorResponse)
+def approve_inspector(
+    inspector_id: UUID,
+    db: Session = Depends(get_db),
+    current_admin: CurrentUser = Depends(get_current_admin),
+):
+    """Admin only: approve inspector so they can log in."""
+    inspector = inspector_services.approve_inspector(inspector_id, current_admin.user_id, db)
+    if not inspector:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Inspector not found")
+    return inspector
+
+
+@router.patch("/{inspector_id}/reject", response_model=inspector_schemas.InspectorResponse)
+def reject_inspector(
+    inspector_id: UUID,
+    db: Session = Depends(get_db),
+    current_admin: CurrentUser = Depends(get_current_admin),
+):
+    """Admin only: reject inspector."""
+    inspector = inspector_services.reject_inspector(inspector_id, db)
+    if not inspector:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Inspector not found")
+    return inspector
+
 
 @router.delete("/{inspector_id}")
 def delete_inspector(inspector_id: UUID, db: Session = Depends(get_db)):
