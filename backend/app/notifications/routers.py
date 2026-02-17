@@ -1,54 +1,80 @@
-from fastapi import APIRouter ,Depends,HTTPException,status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+
 from app.notifications import schemas as notifications_schemas
 from app.notifications import services as notifications_services
+from auth.dependencies import CurrentUser, get_current_user
 from middleware.db import get_db
+from uuid import UUID
+
+router = APIRouter(prefix="/notifications", tags=["notifications"])
 
 
+@router.get("/my-notifications", response_model=list[notifications_schemas.NotificationResponse])
+def get_my_notifications(
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    return notifications_services.get_user_notifications(
+        current_user.user_id, current_user.role, db
+    )
 
-router = APIRouter(prefix="notification", tags=["Notification"])
 
-@router.post("/create",response_model=notifications_schemas.NotificationResponse)
-def add_notification(payload:notifications_schemas.NotificationCreate, db:Session=Depends(get_db)):
-    try:
-        return notifications_services.create_notification(db,payload)
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail=str(e))
-    
+@router.get("/unread", response_model=list[notifications_schemas.NotificationResponse])
+def get_unread_notifications(
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    return notifications_services.get_unread_notifications(
+        current_user.user_id, current_user.role, db
+    )
 
-@router.get("/get",response_model= list[notifications_schemas.NotificationResponse])
-def get_notification(db:Session=Depends(get_db)):
-    try:
-        return notifications_services.get_all_notification(db)
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-@router.put("/{notification_id}", response_model=notifications_schemas.NotificationUpdate)
-def update_notification(
-    notification_id:str, 
-    notification_data:notifications_schemas.NotificationUpdate, 
-    db:Session = Depends(get_db)):
-
-    notification=notifications_services.update_notification_services(
-        notification_id=notification_id,
-        notification_data=notification_data,
-        db=db
+@router.put("/{notification_id}/read", response_model=notifications_schemas.NotificationResponse)
+def mark_notification_as_read(
+    notification_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    notification = notifications_services.mark_as_read(
+        notification_id, current_user.user_id, db
     )
     if not notification:
-        raise HTTPException(status_code=404,detail="notification not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Notification not found")
     return notification
+
+
+@router.put("/mark-all-read")
+def mark_all_notifications_as_read(
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    notifications_services.mark_all_as_read(
+        current_user.user_id, current_user.role, db
+    )
+    return {"message": "All notifications marked as read"}
+
 
 @router.delete("/{notification_id}")
 def delete_notification(
-    notification_id: str,
-    db:Session = Depends(get_db)
+    notification_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
-    result = notifications_services.delete_notification_services(
-        notification_id=notification_id,
-        db=db
+    result = notifications_services.delete_notification(
+        notification_id, current_user.user_id, db
     )
     if not result:
-        raise HTTPException(status_code=404, detail="notification not found")
-        return {"message":"notification deleted successfully"}
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Notification not found")
+    return {"message": "Notification deleted successfully"}
+
+
+# Admin endpoint to create notifications (consider protecting with admin-only dependency)
+@router.post("", response_model=notifications_schemas.NotificationResponse, status_code=status.HTTP_201_CREATED)
+def create_notification(
+    notification_data: notifications_schemas.NotificationCreate,
+    db: Session = Depends(get_db),
+):
+    return notifications_services.create_notification(notification_data, db)
 
     

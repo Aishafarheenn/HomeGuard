@@ -1,114 +1,72 @@
-import React, { useEffect, useState } from "react";
+import React from 'react'
+import { UserCog, Plus, Mail, Phone } from 'lucide-react'
+
+const mockInspectors = [
+  { id: 1, name: 'Arjun K.', email: 'arjun@example.com', phone: '9876543210', experience: '5 years', assigned: 4, status: 'Active' },
+  { id: 2, name: 'Akhil M.', email: 'akhil@example.com', phone: '9123456780', experience: '3 years', assigned: 2, status: 'Inactive' },
+  { id: 3, name: 'Priya S.', email: 'priya@example.com', phone: '9988776655', experience: '4 years', assigned: 3, status: 'Active' },
+]
 
 function Inspector() {
-
-  const [inspectors, setInspectors] = useState([]);
-
-  // 🔥 Dummy Data (Replace with API later)
-  useEffect(() => {
-    setInspectors([
-      {
-        id: 1,
-        name: "Arjun",
-        email: "arjun@gmail.com",
-        phone: "9876543210",
-        experience: "5 Years",
-        properties: 4,
-        status: "Active"
-      },
-      {
-        id: 2,
-        name: "Akhil",
-        email: "akhil@gmail.com",
-        phone: "9123456780",
-        experience: "3 Years",
-        properties: 2,
-        status: "Inactive"
-      }
-    ]);
-  }, []);
-
   return (
-    <div className="p-6 bg-gray-100 min-h-screen">
-
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-700">
-          Inspector Management
-        </h1>
-
-        <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
-          + Add Inspector
+    <div className="space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-[#1F2937]">Inspectors</h1>
+          <p className="text-slate-500 text-sm mt-0.5">Manage inspectors and their assignments</p>
+        </div>
+        <button className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#A78BFA] text-white font-medium hover:bg-[#9333EA] transition shadow-sm shrink-0">
+          <Plus className="w-4 h-4" /> Add inspector
         </button>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-2xl shadow-md overflow-hidden">
-
-        <table className="min-w-full">
-
-          <thead className="bg-gray-200">
-            <tr>
-              <th className="py-3 px-4 text-left">Name</th>
-              <th className="py-3 px-4 text-left">Email</th>
-              <th className="py-3 px-4 text-left">Phone</th>
-              <th className="py-3 px-4 text-left">Experience</th>
-              <th className="py-3 px-4 text-left">Assigned Properties</th>
-              <th className="py-3 px-4 text-left">Status</th>
-              <th className="py-3 px-4 text-left">Actions</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {inspectors.map((inspector) => (
-              <tr
-                key={inspector.id}
-                className="border-b hover:bg-gray-50"
-              >
-                <td className="py-3 px-4 font-medium">{inspector.name}</td>
-                <td className="py-3 px-4">{inspector.email}</td>
-                <td className="py-3 px-4">{inspector.phone}</td>
-                <td className="py-3 px-4">{inspector.experience}</td>
-                <td className="py-3 px-4">{inspector.properties}</td>
-
-                {/* Status Badge */}
-                <td className="py-3 px-4">
-                  <span
-                    className={`px-3 py-1 rounded-full text-sm ${
-                      inspector.status === "Active"
-                        ? "bg-green-100 text-green-600"
-                        : "bg-red-100 text-red-600"
-                    }`}
-                  >
-                    {inspector.status}
-                  </span>
-                </td>
-
-                {/* Actions */}
-                <td className="py-3 px-4 space-x-2">
-                  <button className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">
-                    View
-                  </button>
-
-                  <button className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600">
-                    Edit
-                  </button>
-
-                  <button className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600">
-                    Delete
-                  </button>
-                </td>
-
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100">
+          <h2 className="font-semibold text-[#1F2937]">Inspector list</h2>
+          <p className="text-slate-500 text-sm mt-0.5">All registered inspectors</p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-slate-500 border-b border-slate-100 bg-slate-50/50">
+                <th className="py-3 px-6 font-medium">Name</th>
+                <th className="py-3 px-6 font-medium">Email</th>
+                <th className="py-3 px-6 font-medium">Phone</th>
+                <th className="py-3 px-6 font-medium">Experience</th>
+                <th className="py-3 px-6 font-medium">Assigned</th>
+                <th className="py-3 px-6 font-medium">Status</th>
+                <th className="py-3 px-6 font-medium">Actions</th>
               </tr>
-            ))}
-          </tbody>
-
-        </table>
-
+            </thead>
+            <tbody>
+              {mockInspectors.map((row) => (
+                <tr key={row.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50">
+                  <td className="py-3 px-6 font-medium text-[#1F2937]">{row.name}</td>
+                  <td className="py-3 px-6 text-slate-600">{row.email}</td>
+                  <td className="py-3 px-6 text-slate-600">{row.phone}</td>
+                  <td className="py-3 px-6 text-slate-600">{row.experience}</td>
+                  <td className="py-3 px-6 text-slate-600">{row.assigned} properties</td>
+                  <td className="py-3 px-6">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                      row.status === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'
+                    }`}>
+                      {row.status}
+                    </span>
+                  </td>
+                  <td className="py-3 px-6">
+                    <div className="flex gap-2">
+                      <button className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-[#7C3AED]">View</button>
+                      <button className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-[#7C3AED]">Edit</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
-
     </div>
-  );
+  )
 }
 
-export default Inspector;
+export default Inspector

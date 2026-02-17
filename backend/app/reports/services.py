@@ -31,7 +31,7 @@ def get_evidence_by_id(evidence_id: UUID, db: Session):
 
 def create_evidence(evidence_data: reports_schemas.EvidenceCreate, db: Session):
     try:
-        new_evidence = reports_models.Evidence(**evidence_data.dict())
+        new_evidence = reports_models.Evidence(**evidence_data.model_dump())
         db.add(new_evidence)
         db.commit()
         db.refresh(new_evidence)
@@ -48,7 +48,7 @@ def update_evidence(evidence_id: UUID, evidence_data: reports_schemas.EvidenceUp
         evidence = db.query(reports_models.Evidence).filter(reports_models.Evidence.id == evidence_id).first()
         if not evidence:
             return None
-        for field, value in evidence_data.dict(exclude_unset=True).items():
+        for field, value in evidence_data.model_dump(exclude_unset=True).items():
             setattr(evidence, field, value)
         db.commit()
         db.refresh(evidence)
@@ -92,7 +92,7 @@ def get_red_flag_by_id(red_flag_id: UUID, db: Session):
 
 def create_red_flag(red_flag_data: reports_schemas.RedFlagCreate, db: Session):
     try:
-        new_red_flag = reports_models.RedFlag(**red_flag_data.dict())
+        new_red_flag = reports_models.RedFlag(**red_flag_data.model_dump())
         db.add(new_red_flag)
         db.commit()
         db.refresh(new_red_flag)
@@ -109,7 +109,7 @@ def update_red_flag(red_flag_id: UUID, red_flag_data: reports_schemas.RedFlagUpd
         red_flag = db.query(reports_models.RedFlag).filter(reports_models.RedFlag.id == red_flag_id).first()
         if not red_flag:
             return None
-        for field, value in red_flag_data.dict(exclude_unset=True).items():
+        for field, value in red_flag_data.model_dump(exclude_unset=True).items():
             setattr(red_flag, field, value)
         db.commit()
         db.refresh(red_flag)
@@ -150,7 +150,7 @@ def get_inspection_report_by_id(report_id: UUID, db: Session):
 
 def create_inspection_report(report_data: reports_schemas.InspectionReportCreate, db: Session):
     try:
-        new_report = reports_models.InspectionReport(**report_data.dict())
+        new_report = reports_models.InspectionReport(**report_data.model_dump())
         db.add(new_report)
         db.commit()
         db.refresh(new_report)
@@ -167,7 +167,7 @@ def update_inspection_report(report_id: UUID, report_data: reports_schemas.Inspe
         report = db.query(reports_models.InspectionReport).filter(reports_models.InspectionReport.id == report_id).first()
         if not report:
             return None
-        for field, value in report_data.dict(exclude_unset=True).items():
+        for field, value in report_data.model_dump(exclude_unset=True).items():
             setattr(report, field, value)
         db.commit()
         db.refresh(report)

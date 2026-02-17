@@ -23,7 +23,7 @@ def get_admin(db:Session=Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-@router.put("/{admin_id}", response_model=admin_schemas.AdminUpdate)
+@router.put("/{admin_id}", response_model=admin_schemas.AdminResponse)
 def update_admin(
     admin_id:str, 
     admin_data:admin_schemas.AdminUpdate, 

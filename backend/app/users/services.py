@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session, selectinload
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from app.users import schemas as user_schemas
 from app.users import models as user_models
+from core.security import hash_password
 from uuid import UUID
 
 def get_all_owners(db: Session):
@@ -30,7 +31,9 @@ def get_owner_by_id(owner_id: UUID, db: Session):
 
 def create_owner(owner_data: user_schemas.OwnerCreate, db: Session):
     try:
-        new_owner = user_models.Owner(**owner_data.dict())
+        data = owner_data.model_dump(exclude={"password"})
+        data["password_hash"] = hash_password(owner_data.password)
+        new_owner = user_models.Owner(**data)
         db.add(new_owner)
         db.commit()
         db.refresh(new_owner)
@@ -47,7 +50,7 @@ def update_owner(owner_id: UUID, owner_data: user_schemas.OwnerUpdate, db: Sessi
         owner = db.query(user_models.Owner).filter(user_models.Owner.id == owner_id).first()
         if not owner:
             return None
-        for field, value in owner_data.dict(exclude_unset=True).items():
+        for field, value in owner_data.model_dump(exclude_unset=True).items():
             setattr(owner, field, value)
         db.commit()
         db.refresh(owner)

@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session, selectinload
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from app.inspector import models as inspector_models
 from app.inspector import schemas as inspector_schemas
+from core.security import hash_password
 from uuid import UUID
 
 def get_all_inspectors(db: Session):
@@ -28,7 +29,9 @@ def get_inspector_by_id(inspector_id: UUID, db: Session):
 
 def create_inspector(inspector_data: inspector_schemas.InspectorCreate, db: Session):
     try:
-        new_inspector = inspector_models.Inspector(**inspector_data.dict())
+        data = inspector_data.model_dump(exclude={"password"})
+        data["password_hash"] = hash_password(inspector_data.password)
+        new_inspector = inspector_models.Inspector(**data)
         db.add(new_inspector)
         db.commit()
         db.refresh(new_inspector)
@@ -45,7 +48,7 @@ def update_inspector(inspector_id: UUID, inspector_data: inspector_schemas.Inspe
         inspector = db.query(inspector_models.Inspector).filter(inspector_models.Inspector.id == inspector_id).first()
         if not inspector:
             return None
-        for field, value in inspector_data.dict(exclude_unset=True).items():
+        for field, value in inspector_data.model_dump(exclude_unset=True).items():
             setattr(inspector, field, value)
         db.commit()
         db.refresh(inspector)

@@ -10,7 +10,7 @@ class InspectorBase(BaseModel):
     status: str
 
 class InspectorCreate(InspectorBase):
-    pass
+    password: str  # Hashed server-side
 
 class InspectorResponse(InspectorBase):
     id: UUID

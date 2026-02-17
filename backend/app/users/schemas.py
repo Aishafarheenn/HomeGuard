@@ -9,8 +9,9 @@ class OwnerBase(BaseModel):
     phone: str
     country: str
 
+
 class OwnerCreate(OwnerBase):
-    pass
+    password: str  # Hashed server-side; never stored or returned in response
 
 class OwnerResponse(OwnerBase):
     id: UUID

@@ -4,10 +4,10 @@ from datetime import datetime
 
 
 class AdminCreate(BaseModel):
-    full_name:str
-    email:str
-    password_hash:str
-    phone:str
+    full_name: str
+    email: str
+    password: str  # Plain password; hashed server-side. Min length enforced in router if needed.
+    phone: str
 
 class AdminResponse(BaseModel):
     id:UUID
@@ -17,11 +17,9 @@ class AdminResponse(BaseModel):
     created_at:datetime
 
 class AdminUpdate(BaseModel):
-    full_name:str
-    email:str
-    phone:str
-
-    
+    full_name: str | None = None
+    email: str | None = None
+    phone: str | None = None
 
     class Config:
-        from_attributes=True
+        from_attributes = True

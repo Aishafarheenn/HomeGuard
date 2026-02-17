@@ -25,7 +25,7 @@ def get_package_by_id(package_id: UUID, db: Session):
 
 def create_package(package_data: inspection_schemas.InspectionPackageCreate, db: Session):
     try:
-        new_package = inspection_models.InspectionPackage(**package_data.dict())
+        new_package = inspection_models.InspectionPackage(**package_data.model_dump())
         db.add(new_package)
         db.commit()
         db.refresh(new_package)
@@ -57,7 +57,7 @@ def get_schedule_by_id(schedule_id: UUID, db: Session):
 
 def create_schedule(schedule_data: inspection_schemas.InspectionScheduleCreate, db: Session):
     try:
-        new_schedule = inspection_models.InspectionSchedule(**schedule_data.dict())
+        new_schedule = inspection_models.InspectionSchedule(**schedule_data.model_dump())
         db.add(new_schedule)
         db.commit()
         db.refresh(new_schedule)
@@ -89,7 +89,7 @@ def get_jobticket_by_id(job_ticket_id: UUID, db: Session):
 
 def create_jobticket(ticket_data: inspection_schemas.JobTicketCreate, db: Session):
     try:
-        new_ticket = inspection_models.JobTickets(**ticket_data.dict())
+        new_ticket = inspection_models.JobTickets(**ticket_data.model_dump())
         db.add(new_ticket)
         db.commit()
         db.refresh(new_ticket)
@@ -121,7 +121,7 @@ def get_inspection_by_id(inspection_id: UUID, db: Session):
 
 def create_inspection(inspection_data: inspection_schemas.InspectionCreate, db: Session):
     try:
-        new_inspection = inspection_models.Inspection(**inspection_data.dict())
+        new_inspection = inspection_models.Inspection(**inspection_data.model_dump())
         db.add(new_inspection)
         db.commit()
         db.refresh(new_inspection)
@@ -138,7 +138,7 @@ def update_inspection(inspection_id: UUID, inspection_data: inspection_schemas.I
         inspection = db.query(inspection_models.Inspection).filter(inspection_models.Inspection.id == inspection_id).first()
         if not inspection:
             return None
-        for field, value in inspection_data.dict(exclude_unset=True).items():
+        for field, value in inspection_data.model_dump(exclude_unset=True).items():
             setattr(inspection, field, value)
         db.commit()
         db.refresh(inspection)
@@ -179,7 +179,7 @@ def get_geo_verification_by_id(geo_id: UUID, db: Session):
 
 def create_geo_verification(geo_data: inspection_schemas.GeoVerificationCreate, db: Session):
     try:
-        new_geo = inspection_models.GeoVerification(**geo_data.dict())
+        new_geo = inspection_models.GeoVerification(**geo_data.model_dump())
         db.add(new_geo)
         db.commit()
         db.refresh(new_geo)
@@ -211,7 +211,7 @@ def get_checklist_by_id(checklist_id: UUID, db: Session):
 
 def create_checklist(checklist_data: inspection_schemas.ChecklistCreate, db: Session):
     try:
-        new_checklist = inspection_models.Checklist(**checklist_data.dict())
+        new_checklist = inspection_models.Checklist(**checklist_data.model_dump())
         db.add(new_checklist)
         db.commit()
         db.refresh(new_checklist)
@@ -249,7 +249,7 @@ def get_checklist_result_by_id(result_id: UUID, db: Session):
 
 def create_checklist_result(result_data: inspection_schemas.InspectionChecklistResultCreate, db: Session):
     try:
-        new_result = inspection_models.InspectionChecklistResults(**result_data.dict())
+        new_result = inspection_models.InspectionChecklistResults(**result_data.model_dump())
         db.add(new_result)
         db.commit()
         db.refresh(new_result)

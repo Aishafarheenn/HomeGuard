@@ -24,7 +24,7 @@ def get_property_by_id(property_id: UUID, db: Session):
 
 def create_property(property_data: property_schemas.PropertyCreate, db: Session):
     try:
-        new_property = property_models.Property(**property_data.dict())
+        new_property = property_models.Property(**property_data.model_dump())
         db.add(new_property)
         db.commit()
         db.refresh(new_property)
@@ -41,7 +41,7 @@ def update_property(property_id: UUID, property_data: property_schemas.PropertyU
         property = db.query(property_models.Property).filter(property_models.Property.id == property_id).first()
         if not property:
             return None
-        for field, value in property_data.dict(exclude_unset=True).items():
+        for field, value in property_data.model_dump(exclude_unset=True).items():
             setattr(property, field, value)
         db.commit()
         db.refresh(property)

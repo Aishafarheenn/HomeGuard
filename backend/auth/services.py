@@ -3,31 +3,32 @@ from auth import schemas as auth_schemas
 from app.admin import models as admin_models
 from app.inspector import models as inspector_models
 from app.users import models as user_models
+from core.security import verify_password
+
+
+def get_display_name(user):
+    """Get display name from admin/inspector/owner (all use full_name)."""
+    return getattr(user, "full_name", None) or getattr(user, "name", None) or ""
+
 
 def UserLogin(db: Session, userdata: auth_schemas.LoginData):
     # Check admin
-    admin = db.query(admin_models.Admin).filter(
-        admin_models.Admin.email == userdata.email,
-        admin_models.Admin.password_hash == userdata.password
-    ).first()
-    if admin:
-        admin.name=admin.full_name
+    admin = db.query(admin_models.Admin).filter(admin_models.Admin.email == userdata.email).first()
+    if admin and verify_password(userdata.password, admin.password_hash):
         return admin, "admin"
-    
+
     # Check inspector
     inspector = db.query(inspector_models.Inspector).filter(
-        inspector_models.Inspector.email == userdata.email,
-        inspector_models.Inspector.password_hash == userdata.password
+        inspector_models.Inspector.email == userdata.email
     ).first()
-    if inspector:
+    if inspector and getattr(inspector, "password_hash", None) and verify_password(
+        userdata.password, inspector.password_hash
+    ):
         return inspector, "inspector"
-    
-    # Check user
-    user = db.query(user_models.User).filter(
-        user_models.User.email == userdata.email,
-        user_models.User.password_hash == userdata.password
-    ).first()
-    if user:
-        return user, "user"
-    
+
+    # Check owner (User/Owner)
+    user = db.query(user_models.Owner).filter(user_models.Owner.email == userdata.email).first()
+    if user and verify_password(userdata.password, user.password_hash):
+        return user, "owner"
+
     return None, None

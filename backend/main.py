@@ -1,7 +1,11 @@
+import logging
+import os
+
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
 import uvicorn
+
 from middleware.db import init_db
 
 # Import all routers
@@ -10,24 +14,44 @@ from app.inspection.routers import router as inspection_router
 from auth.routers import router as auth_router
 from app.properties.routers import router as properties_router
 from app.reports.routers import router as reports_router
-from app.users.routers import router as user_router  # Uncomment when router is defined
-from app.inspector.routers import router as inspector_router  # Uncomment when router is defined
-# from app.notifications.routers import router as notifications_router  # Uncomment when router is defined
+from app.users.routers import router as user_router
+from app.inspector.routers import router as inspector_router
+from app.notifications.routers import router as notifications_router
+
+logging.basicConfig(
+    level=os.getenv("LOG_LEVEL", "INFO"),
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger("homeguard")
+
+
+def _get_cors_origins() -> list[str]:
+    origins = os.getenv("CORS_ORIGINS", "").strip()
+    if origins:
+        return [o.strip() for o in origins.split(",") if o.strip()]
+    # Production: require explicit CORS_ORIGINS
+    if os.getenv("ENV") == "production":
+        return []
+    return ["*"]
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Initialize database
+    logger.info("Starting HomeGuard API")
     init_db()
     yield
-    # Shutdown: Clean up if needed
-    pass
+    logger.info("Shutting down HomeGuard API")
 
-app = FastAPI(lifespan=lifespan)
 
-# Add CORS middleware
+app = FastAPI(
+    title="HomeGuard API",
+    description="HomeGuard inspection and property management backend",
+    lifespan=lifespan,
+)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Adjust this in production
+    allow_origins=_get_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -39,13 +63,20 @@ app.include_router(admin_router)
 app.include_router(inspection_router)
 app.include_router(properties_router)
 app.include_router(reports_router)
-app.include_router(user_router)  # Uncomment when router is defined
-app.include_router(inspector_router)  # Uncomment when router is defined
-# app.include_router(notifications_router)  # Uncomment when router is defined
+app.include_router(user_router)
+app.include_router(inspector_router)
+app.include_router(notifications_router)
 
 @app.get("/")
 def read_root():
-    return {"message": "Hello FastAPI"}
+    return {"message": "HomeGuard API", "docs": "/docs"}
+
+
+@app.get("/health")
+def health():
+    """Production health check (e.g. for load balancers)."""
+    return {"status": "ok"}
+
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=True)

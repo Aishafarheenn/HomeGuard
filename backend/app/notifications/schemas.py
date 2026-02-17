@@ -1,28 +1,27 @@
 from pydantic import BaseModel
 from uuid import UUID
 from datetime import datetime
-
-
+from typing import Optional
 
 class NotificationCreate(BaseModel):
-    owner_id=UUID
-    message=str
-    status=str
+    user_id: UUID
+    user_type: str  # 'owner' or 'inspector'
+    message: str
 
 class NotificationResponse(BaseModel):
-    id:UUID
-    owner_id:UUID
-    message:str
-    sent_at:datetime
-    status:str
+    id: UUID
+    user_id: UUID
+    user_type: str
+    message: str
+    is_read: bool
+    sent_at: datetime
+    class Config:
+        from_attributes = True
 
 class NotificationUpdate(BaseModel):
-    owner_id:UUID
-    message:str
-    status:str
-
+    is_read: Optional[bool] = None
     class Config:
-        from_attributes=True
+        from_attributes = True
 
 
 

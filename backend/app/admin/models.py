@@ -11,7 +11,7 @@ class Admin(Base):
     full_name = Column(String(100), nullable=False)
     email = Column(String(150), unique=True, nullable=False)
     password_hash = Column(Text, nullable=False)
-    phone = Column(String(10), unique=True, nullable=False)
+    phone = Column(String(20), unique=True, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     # relationships
