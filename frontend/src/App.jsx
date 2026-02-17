@@ -15,6 +15,7 @@ import Inspections from './screens/dashboard/Inspections'
 import JobTickets from './screens/dashboard/Jobtickets'
 import Inspector from './screens/dashboard/Inspector'
 
+
 function App() {
   return (
     <AuthProvider>
