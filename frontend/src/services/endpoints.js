@@ -26,4 +26,8 @@ export const endpoint = {
     create: `${BASE_URL}/inspection/create`,
     get: `${BASE_URL}/inspection`,
   },
+
+  package: {
+    create: `${BASE_URL}/packages`,
+  },
 }

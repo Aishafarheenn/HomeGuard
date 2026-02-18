@@ -72,8 +72,8 @@ function LandingPage() {
 
   return (
     <div className="min-h-screen bg-white text-slate-800 overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-[#F5F3FF] via-white to-[#F5F3FF]" />
-      <div className="absolute top-0 left-0 right-0 h-[28rem] bg-[#EDE9FE]/50 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to- from-[#F5F3FF] via-white to-[#F5F3FF]" />
+      <div className="absolute top-0 left-0 right-0  bg-[#EDE9FE]/50 pointer-events-none" />
 
       {/* Header */}
       <header className="relative z-10 flex items-center justify-between px-6 py-5 max-w-6xl mx-auto">
@@ -155,7 +155,7 @@ function LandingPage() {
                     </div>
                   </div>
                   {item.step < steps.length && (
-                    <div className="hidden lg:block absolute top-5 left-[4.5rem] w-[calc(100%-3rem)] border-t border-dashed border-slate-200 -z-10" />
+                    <div className="hidden lg:block absolute top-5  w-[calc(100%-3rem)] border-t border-dashed border-slate-200 -z-10" />
                   )}
                 </div>
               )
@@ -245,7 +245,7 @@ function LandingPage() {
 
         {/* CTA */}
         <section className="py-20 border-t border-slate-100">
-          <div className="max-w-2xl mx-auto text-center p-10 rounded-3xl bg-gradient-to-br from-[#EDE9FE] to-[#DDD6FE] border border-[#C4B5FD]">
+          <div className="max-w-2xl mx-auto text-center p-10 rounded-3xl  from-[#EDE9FE] to-[#DDD6FE] border border-[#C4B5FD]">
             <h2 className="text-2xl sm:text-3xl font-bold text-[#1F2937] mb-3">
               Ready to get started?
             </h2>
