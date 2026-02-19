@@ -4,7 +4,6 @@ from datetime import datetime
 from typing import Optional
 
 class PropertyBase(BaseModel):
-    owner_id: UUID
     address: str
     latitude: float
     longitude: float
@@ -14,6 +13,7 @@ class PropertyCreate(PropertyBase):
 
 class PropertyResponse(PropertyBase):
     id: UUID
+    owner_id: Optional[UUID] = None
     created_at: datetime
     class Config:
         from_attributes = True
