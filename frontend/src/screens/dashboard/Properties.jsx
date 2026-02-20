@@ -1,8 +1,9 @@
-import React from 'react'
+import React ,{useState}from 'react'
 import { Plus, Eye, Edit, Trash2, ClipboardList, FileText } from 'lucide-react'
+import CreateAddPropertyModal from './CreateAddPropertyModal'
 
 const features = [
-  { title: 'Add property', description: 'Register a new property under an owner.', icon: Plus },
+  // { title: 'Add property', description: 'Register a new property under an owner.', icon: Plus },
   { title: 'View properties', description: 'See all registered properties.', icon: Eye },
   { title: 'Update property', description: 'Modify property details and information.', icon: Edit },
   { title: 'Delete property', description: 'Remove a property from the system.', icon: Trash2 },
@@ -17,6 +18,8 @@ const mockProperties = [
 ]
 
 function Properties() {
+   const [modalOpen, setModalOpen] = useState(false)
+   
   return (
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -24,9 +27,13 @@ function Properties() {
           <h1 className="text-2xl font-bold text-[#1F2937]">Properties</h1>
           <p className="text-slate-500 text-sm mt-0.5">Manage properties and view inspection schedules</p>
         </div>
-        <button className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#A78BFA] text-white font-medium hover:bg-[#9333EA] transition shadow-sm shrink-0">
-          <Plus className="w-4 h-4" /> Add property
-        </button>
+       <button
+                 type="button"
+                 onClick={() => setModalOpen(true)}
+                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#A78BFA] text-white font-medium hover:bg-[#9333EA] transition shadow-sm shrink-0"
+               >
+                 <Plus className="w-4 h-4" /> Add property
+               </button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -89,6 +96,10 @@ function Properties() {
           </table>
         </div>
       </div>
+      <CreateAddPropertyModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+      />
     </div>
   )
 }

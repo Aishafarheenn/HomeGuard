@@ -1,3 +1,5 @@
+import Properties from "../screens/dashboard/Properties"
+
 export const BASE_URL = 'http://localhost:8001'
 
 export const endpoint = {
@@ -30,4 +32,8 @@ export const endpoint = {
   Package: {
     create: `${BASE_URL}/inspection/packages`,
   },
+
+  Property: {
+    create: `${BASE_URL}/properties/property`,
+  }
 }
