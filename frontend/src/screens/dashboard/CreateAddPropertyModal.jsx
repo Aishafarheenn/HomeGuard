@@ -15,42 +15,43 @@ function CreateAddPropertyModal({ isOpen, onClose }) {
 
   const handleChange = (e) => {
     setError('')
-    const {name, value}= e.target
-    setFormData((prev) => ({...prev,[name]: value}))
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("")
     if (!formData.address.trim()) {
-        setError('Address not required')
-        return
+      setError('Address not required')
+      return
     }
     setLoading(true)
-    try{
-        await AddPropertyApi.createProperty({
-            address: formData.address.trim(),
-            latitude: formData.latitude.trim(),
-            longitude:formData. longitude.trim(),
-        })
-        setFormData({ address: '', longitude: '', latitude: ''})
-        onclose()
-        } catch (err) {
-        const detail = err.response?.data?.detail?? err.message?? 'Failed to Add Property'
-        setError(Array.isArray(detail)? detail.join('') : String(detail))
-        } finally {
-            setLoading(false)
-        }
-
+    try {
+      await AddPropertyApi.createProperty({
+        address: formData.address.trim(),
+        latitude: formData.latitude.trim(),
+        longitude: formData.longitude.trim(),
+      })
+      setFormData({ address: '', longitude: '', latitude: '' })
+      onclose()
+    } catch (err) {
+      const detail = err.response?.data?.detail ?? err.message ?? 'Failed to Add Property'
+      setError(Array.isArray(detail) ? detail.join('') : String(detail))
+    } finally {
+      setLoading(false)
     }
 
-        const handleClose = () => {
-            if(!loading) {
-                setError('')
-                setFormData( {address: '', latitude:'' , longitude:'' })
-            }
-        }
-    if(!isOpen) return null
+  }
+
+  const handleClose = () => {
+    if (!loading) {
+      setError('')
+      setFormData({ address: '', latitude: '', longitude: '' })
+    }
+    onClose()
+  }
+  if (!isOpen) return null
 
 
   return (
