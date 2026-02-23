@@ -1,6 +1,7 @@
-import React ,{useState}from 'react'
+import React ,{useState, useEffect}from 'react'
 import { Plus, Eye, Edit, Trash2, ClipboardList, FileText } from 'lucide-react'
-import CreateAddPropertyModal from './CreateAddPropertyModal'
+import CreatePropertyModal from './CreatePropertyModal'
+import { propertyServices } from '../../services/requests/propertyServices'
 
 const features = [
   // { title: 'Add property', description: 'Register a new property under an owner.', icon: Plus },
@@ -19,6 +20,26 @@ const mockProperties = [
 
 function Properties() {
    const [modalOpen, setModalOpen] = useState(false)
+   const [loading, setLoading ] = useState(false)
+   const [properties, setproperties] = useState([])
+
+   useEffect(() =>{
+    fetchProperty()
+   }, [])
+
+   const fetchProperty = async () =>{
+    setLoading(true)
+    try{
+      const response = await propertyServices.getProperty()
+      const propertyData = response?? []
+      setproperties(propertyData)
+      console.log(propertyData)
+    } catch (err){
+      console.error("failed to fetch property:",response.data?.error)
+    } finally {
+      setLoading(false)
+    }
+   }
    
   return (
     <div className="space-y-8">
@@ -74,7 +95,7 @@ function Properties() {
               </tr>
             </thead>
             <tbody>
-              {mockProperties.map((row) => (
+              {properties.map((row) => (
                 <tr key={row.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50">
                   <td className="py-3 px-6 font-medium text-[#1F2937]">{row.address}</td>
                   <td className="py-3 px-6 text-slate-600">{row.owner}</td>
@@ -96,7 +117,7 @@ function Properties() {
           </table>
         </div>
       </div>
-      <CreateAddPropertyModal
+      <CreatePropertyModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
       />

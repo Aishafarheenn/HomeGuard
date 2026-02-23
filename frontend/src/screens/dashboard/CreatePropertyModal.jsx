@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { X, MapPin } from "lucide-react";
-import { AddPropertyApi } from "../../services/requests/AddProperty";
+import { propertyServices } from "../../services/requests/propertyServices";
 
-function CreateAddPropertyModal({ isOpen, onClose }) {
+function CreatePropertyModal({ isOpen, onClose }) {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -28,18 +28,19 @@ function CreateAddPropertyModal({ isOpen, onClose }) {
     }
     setLoading(true)
     try {
-      await AddPropertyApi.createProperty({
+      await propertyServices.createProperty({
         address: formData.address.trim(),
         latitude: formData.latitude.trim(),
         longitude: formData.longitude.trim(),
       })
       setFormData({ address: '', longitude: '', latitude: '' })
-      onclose()
+
     } catch (err) {
       const detail = err.response?.data?.detail ?? err.message ?? 'Failed to Add Property'
       setError(Array.isArray(detail) ? detail.join('') : String(detail))
     } finally {
       setLoading(false)
+      onClose()
     }
 
   }
@@ -165,4 +166,4 @@ function CreateAddPropertyModal({ isOpen, onClose }) {
   );
 }
 
-export default CreateAddPropertyModal;
+export default CreatePropertyModal;

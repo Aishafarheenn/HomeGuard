@@ -1,6 +1,7 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { ClipboardList, Users, FileText, ShieldCheck, Plus, ArrowRight } from 'lucide-react'
 import CreateServiceitemModal from './CreateServiceitemModal'
+import { serviceItems } from '../../services/requests/ServiceItems'
 
 const staticServices = [
   { title: 'Inspection service', description: 'Schedule and manage home safety inspections.', icon: ClipboardList },
@@ -11,6 +12,27 @@ const staticServices = [
 
 function ServiceItems() {
   const [modalOpen, setModalOpen] = useState(false)
+  const [packages, setPackage] = useState([])
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() =>{
+    fetchPackage()
+  }, [])
+ 
+  const fetchPackage = async () => {
+    setLoading(true)
+    try{
+      const response = await serviceItems.getPackage()
+      const packageData = response??[]
+      setPackage(packageData)
+      console.log(packageData)
+    } catch (err){
+      console.error(" Failed to load packages:", response.data?.error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
 
   return (
     <div className="space-y-8">
@@ -51,6 +73,44 @@ function ServiceItems() {
           })}
         </div>
       </div>
+
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100">
+          <h2 className="font-semibold text-[#1F2937]">All packages</h2>
+          <p className="text-slate-500 text-sm mt-0.5">List of registered packages</p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-slate-500 border-b border-slate-100 bg-slate-50/50">
+                <th className="py-3 px-6 font-medium">Name</th>
+                <th className="py-3 px-6 font-medium">Description</th>
+                <th className="py-3 px-6 font-medium">Price</th>
+               
+              </tr>
+            </thead>
+            <tbody>
+              {packages.map((row) => (
+                <tr key={row.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50">
+                  <td className="py-3 px-6 font-medium text-[#1F2937]">{row.name}</td>
+                  <td className="py-3 px-6 text-slate-600">{row.description}</td>
+                  <td className="py-3 px-6 text-slate-600">{row.price}</td>
+                  
+                    
+                  <td className="py-3 px-6">
+                    <div className="flex gap-2">
+                      <button className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-[#7C3AED]">View</button>
+                      <button className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-[#7C3AED]">Edit</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+
 
       <CreateServiceitemModal
         isOpen={modalOpen}

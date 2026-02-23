@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { X, Package } from 'lucide-react'
-import { serviceItemsApi } from '../../services/requests/ServiceItems'
+import { serviceItems } from '../../services/requests/ServiceItems'
 
 function CreateServiceitemModal({ isOpen, onClose }) {
   const [loading, setLoading] = useState(false)
@@ -26,7 +26,7 @@ function CreateServiceitemModal({ isOpen, onClose }) {
     }
     setLoading(true)
     try {
-      await serviceItemsApi.createPackage({
+      await serviceItems.createPackage({
         name: formData.name.trim(),
         description: formData.description.trim(),
         price: formData.price,
