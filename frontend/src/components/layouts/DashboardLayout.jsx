@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 
+
 const navItems = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/dashboard/serviceitems', label: 'Services', icon: Package },
@@ -24,6 +25,8 @@ const navItems = [
   { path: '/dashboard/inspector', label: 'Inspectors', icon: UserCog },
   { path: '/dashboard/owners', label: 'Owners', icon: Users },
   { path: '/dashboard/jobtickets', label: 'Job tickets', icon: Ticket },
+  
+  
 ]
 
 function DashboardLayout() {
@@ -136,4 +139,4 @@ function DashboardLayout() {
   )
 }
 
-export default DashboardLayout
+export default DashboardLayout;
