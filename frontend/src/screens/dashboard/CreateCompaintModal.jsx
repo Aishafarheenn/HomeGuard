@@ -1,0 +1,168 @@
+import React, { useState } from "react";
+import { X, MessageSquare } from "lucide-react";
+import { newComplaint } from "../../services/requests/newComplaint";
+
+
+function CreateComplaintModal({ isOpen, onClose }) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    message: "",
+  });
+
+  const handleChange = (e) => {
+    setError("");
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
+      setError("All fields are required");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await newComplaint.createComplaint({
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        message: formData.message.trim(),
+      });
+
+      setFormData({ name: "", email: "", message: "" });
+    } catch (err) {
+      const detail =
+        err.response?.data?.detail ??
+        err.message ??
+        "Failed to submit complaint";
+      setError(Array.isArray(detail) ? detail.join("") : String(detail));
+    } finally {
+      setLoading(false);
+      onClose();
+    }
+  };
+
+  const handleClose = () => {
+    if (!loading) {
+      setError("");
+      setFormData({ name: "", email: "", message: "" });
+    }
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Overlay */}
+      <div
+        className="absolute inset-0 bg-slate-900/50"
+        onClick={handleClose}
+      />
+
+      {/* Modal Card */}
+      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <div className="flex items-center gap-2">
+            <span className="w-10 h-10 rounded-xl bg-[#EDE9FE] flex items-center justify-center">
+              <MessageSquare className="w-5 h-5 text-[#7C3AED]" />
+            </span>
+            <h2 className="text-lg font-semibold text-[#1F2937]">
+              Create Complaint
+            </h2>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleClose}
+            disabled={loading}
+            className="p-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 disabled:opacity-50"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {error && (
+            <div className="rounded-xl bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm">
+              {error}
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              Name
+            </label>
+            <input
+              type="text"
+              name="name"
+              placeholder="Enter your name"
+              value={formData.name}
+              onChange={handleChange}
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#C4B5FD]"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              Email
+            </label>
+            <input
+              type="email"
+              name="email"
+              placeholder="Enter your email"
+              value={formData.email}
+              onChange={handleChange}
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#C4B5FD]"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              Message
+            </label>
+            <textarea
+              name="message"
+              rows="4"
+              placeholder="Write your complaint..."
+              value={formData.message}
+              onChange={handleChange}
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#C4B5FD]"
+            />
+          </div>
+
+          {/* Buttons */}
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={handleClose}
+              disabled={loading}
+              className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-700 font-medium hover:bg-slate-50"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 py-3 rounded-xl bg-[#A78BFA] text-white font-semibold hover:bg-[#9333EA]"
+            >
+              {loading ? "Submitting…" : "Submit Complaint"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+export default CreateComplaintModal;

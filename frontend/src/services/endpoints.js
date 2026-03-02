@@ -1,5 +1,4 @@
-import JobTickets from "../screens/dashboard/Jobtickets"
-import Properties from "../screens/dashboard/Properties"
+
 
 export const BASE_URL = 'http://localhost:8001'
 
@@ -43,5 +42,15 @@ export const endpoint = {
 
   JobTicket: {
     create: `${BASE_URL}/inspection/jobticket`
+  },
+
+  Complaint: {
+    create: `${BASE_URL}/complaints/complaints`,
+    get: `${BASE_URL}/complaints`
+  },
+
+  Feedback: {
+    create: `${BASE_URL}/feedback/feedback`,
+    get: `${BASE_URL}/feedback/feedback`,
   }
 }

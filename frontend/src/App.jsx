@@ -15,6 +15,8 @@ import Properties from './screens/dashboard/Properties'
 import Inspections from './screens/dashboard/Inspections'
 import JobTickets from './screens/dashboard/Jobtickets'
 import Inspector from './screens/dashboard/Inspector'
+import Complaint from './screens/dashboard/Complaint'
+import Feedback from './screens/dashboard/Feedback'
 
 
 function App() {
@@ -33,7 +35,9 @@ function App() {
                 <DashboardLayout />
               </ProtectedRoute>
             }
-          >
+        
+  
+>
             <Route index element={<Dashboard />} />
             <Route path="serviceitems" element={<ServiceItems />} />
             <Route path="owners" element={<Owners />} />
@@ -41,6 +45,8 @@ function App() {
             <Route path="inspections" element={<Inspections />} />
             <Route path="jobtickets" element={<JobTickets />} />
             <Route path="inspector" element={<Inspector />} />
+            <Route path="complaints" element={<Complaint />} /> 
+            <Route path="feedback" element={<Feedback />} /> 
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

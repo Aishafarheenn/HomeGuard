@@ -14,7 +14,7 @@ def create_feedback(feedback_data: feedback_schemas.FeedbackCreate, db: Session 
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-@router.get("/complaints", response_model=list[feedback_schemas.FeedbackResponse])
+@router.get("/feedback", response_model=list[feedback_schemas.FeedbackResponse])
 def get_all_feedback(db: Session = Depends(get_db)):
     try:
         return feedback_services.get_all_feedback(db)

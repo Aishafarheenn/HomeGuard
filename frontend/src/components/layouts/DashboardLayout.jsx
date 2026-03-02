@@ -13,8 +13,10 @@ import {
   LogOut,
   Menu,
   ChevronLeft,
+  MessageSquare,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+
 
 
 const navItems = [
@@ -25,6 +27,9 @@ const navItems = [
   { path: '/dashboard/inspector', label: 'Inspectors', icon: UserCog },
   { path: '/dashboard/owners', label: 'Owners', icon: Users },
   { path: '/dashboard/jobtickets', label: 'Job tickets', icon: Ticket },
+  { path: '/dashboard/complaints', label: 'Complaints', icon: Bell },
+  { path: '/dashboard/feedback', label: 'Feedback', icon: MessageSquare },
+  
   
   
 ]

@@ -2,7 +2,7 @@ import React from 'react'
 import { Users, PlusCircle, Eye, Edit, Trash2, ClipboardList, FileText } from 'lucide-react'
 
 const features = [
-  { title: 'Add owner', description: 'Register a new property owner.', icon: PlusCircle },
+  
   { title: 'View owners', description: 'See all registered property owners.', icon: Users },
   { title: 'Update owner', description: 'Edit existing owner details.', icon: Edit },
   { title: 'Delete owner', description: 'Remove an owner from the system.', icon: Trash2 },
@@ -24,9 +24,7 @@ function Owners() {
           <h1 className="text-2xl font-bold text-[#1F2937]">Owners</h1>
           <p className="text-slate-500 text-sm mt-0.5">Manage property owners and their details</p>
         </div>
-        <button className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#A78BFA] text-white font-medium hover:bg-[#9333EA] transition shadow-sm shrink-0">
-          <PlusCircle className="w-4 h-4" /> Add owner
-        </button>
+        
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

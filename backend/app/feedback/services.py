@@ -20,7 +20,7 @@ def create_feedback(feedback_data: feedback_schemas.FeedbackCreate, db: Session)
        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error: {str(e)}")
 
 
-def get_all_complaints(db: Session):
+def get_all_feedback(db: Session):
     try:
         return db.query(feedback_models.Feedback).all()
     except SQLAlchemyError as e:

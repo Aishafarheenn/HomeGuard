@@ -6,7 +6,7 @@ from app.complaint import models as complaint_models
 
 
 
-def create_complaint(complaint_data: complaint_schemas.ComplaintCreate, db: Session):
+def create_complaints(complaint_data: complaint_schemas.ComplaintCreate, db: Session):
    
     try:
         new_complaint = complaint_models.Complaint(**complaint_data.model_dump())

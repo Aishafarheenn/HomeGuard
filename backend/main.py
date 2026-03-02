@@ -17,6 +17,8 @@ from app.reports.routers import router as reports_router
 from app.users.routers import router as user_router
 from app.inspector.routers import router as inspector_router
 from app.notifications.routers import router as notifications_router
+from app.complaint.routers import router as complaint_router
+from app.feedback.routers import router as feedback_router
 
 logging.basicConfig(
     level=os.getenv("LOG_LEVEL", "INFO"),
@@ -66,6 +68,8 @@ app.include_router(reports_router)
 app.include_router(user_router)
 app.include_router(inspector_router)
 app.include_router(notifications_router)
+app.include_router(complaint_router)
+app.include_router(feedback_router)
 
 @app.get("/")
 def read_root():
