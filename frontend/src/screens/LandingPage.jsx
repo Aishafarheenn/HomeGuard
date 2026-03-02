@@ -2,6 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import {
   Shield,
+  User,
   Home,
   ClipboardCheck,
   Lock,
@@ -240,6 +241,29 @@ function LandingPage() {
                 Apply as inspector <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
+          </div>
+        </section>
+
+        {/* Feedback section (optional) */}
+        <section className="py-16 border-t border-slate-100">
+          <h2 className="text-2xl sm:text-3xl font-bold text-[#1F2937] text-center mb-4">
+            What our users say
+          </h2>
+          <p className="text-slate-600 text-center mb-8">
+            What our users say about HomeGuard
+          </p>
+          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+            {/* {reviews.map((review) => ( */}
+              <div className="p-8 rounded-2xl bg-white border border-slate-200 shadow-sm">
+                <div className="flex items-center gap-3 mb-6">
+                  <span className="w-12 h-12 rounded-xl bg-[#EDE9FE] flex items-center justify-center">
+                    <User className="w-6 h-6 text-[#7C3AED]" />
+                  </span>
+                  <h3 className="text-lg font-bold text-[#1F2937]">Melbin</h3>
+                </div>
+                <p className="text-slate-600">Good thing</p>
+              </div>
+            {/* ))} */}
           </div>
         </section>
 
