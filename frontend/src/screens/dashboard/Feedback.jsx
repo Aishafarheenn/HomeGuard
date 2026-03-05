@@ -87,9 +87,9 @@ function Feedback() {
                     <td className="py-3 px-6 font-medium text-[#1F2937]">
                       {row.name}
                     </td>
-                    <td className="py-3 px-6 text-slate-600">
+                   <td className="py-3 px-6 text-slate-600">
                       {row.rating}
-                    </td>
+                    </td> 
                     <td className="py-3 px-6 text-slate-600 max-w-xs truncate">
                       {row.comment}
                     </td>

@@ -1,4 +1,4 @@
-import React from 'react'
+import { useState } from "react";
 import { Link } from 'react-router-dom'
 import {
   Shield,
@@ -244,29 +244,77 @@ function LandingPage() {
           </div>
         </section>
 
-        {/* Feedback section (optional) */}
-        <section className="py-16 border-t border-slate-100">
-          <h2 className="text-2xl sm:text-3xl font-bold text-[#1F2937] text-center mb-4">
-            What our users say
-          </h2>
-          <p className="text-slate-600 text-center mb-8">
-            What our users say about HomeGuard
-          </p>
-          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            {/* {reviews.map((review) => ( */}
-              <div className="p-8 rounded-2xl bg-white border border-slate-200 shadow-sm">
-                <div className="flex items-center gap-3 mb-6">
-                  <span className="w-12 h-12 rounded-xl bg-[#EDE9FE] flex items-center justify-center">
-                    <User className="w-6 h-6 text-[#7C3AED]" />
-                  </span>
-                  <h3 className="text-lg font-bold text-[#1F2937]">Melbin</h3>
-                </div>
-                <p className="text-slate-600">Good thing</p>
-              </div>
-            {/* ))} */}
-          </div>
-        </section>
+{/* Feedback section (optional) */}
+<section className="py-16 border-t border-slate-100 bg-slate-50">
+  <h2 className="text-2xl sm:text-3xl font-bold text-[#1F2937] text-center mb-4">
+    What our users say
+  </h2>
+  <p className="text-slate-600 text-center mb-10">
+    What our users say about HomeGuard
+  </p>
 
+  {/** STATE */}
+  {(() => {
+    const reviews = [
+      { name: "Melbin", comment: "Good thing" },
+      { name: "Aisha", comment: "Very smooth experience." },
+      { name: "Rahul", comment: "Excellent support." },
+    ];
+
+    const [activeIndex, setActiveIndex] = useState(1);
+
+    return (
+      <>
+        <div className="flex justify-center items-center gap-6 max-w-5xl mx-auto">
+          {reviews.map((review, index) => {
+            const isActive = index === activeIndex;
+
+            return (
+              <div
+                key={index}
+                onClick={() => setActiveIndex(index)}
+                className={`cursor-pointer transition-all duration-500 
+                ${
+                  isActive
+                    ? "scale-100 opacity-100 z-10"
+                    : "scale-90 opacity-40"
+                }`}
+              >
+                <div className="w-[320px] p-8 rounded-2xl bg-white border border-slate-200 shadow-lg">
+                  <div className="flex items-center gap-3 mb-6">
+                    <span className="w-12 h-12 rounded-xl bg-[#EDE9FE] flex items-center justify-center">
+                      <User className="w-6 h-6 text-[#7C3AED]" />
+                    </span>
+                    <h3 className="text-lg font-bold text-[#1F2937]">
+                      {review.name}
+                    </h3>
+                  </div>
+                  <p className="text-slate-600">{review.comment}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Dots */}
+        <div className="flex justify-center gap-2 mt-8">
+          {reviews.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setActiveIndex(index)}
+              className={`w-3 h-3 rounded-full transition 
+              ${
+                activeIndex === index
+                  ? "bg-purple-600"
+                  : "bg-gray-300"
+              }`}
+            />
+          ))}
+        </div>
+      </>
+    );
+  })()}
+</section>
         {/* CTA */}
         <section className="py-20 border-t border-slate-100">
           <div className="max-w-2xl mx-auto text-center p-10 rounded-3xl  from-[#EDE9FE] to-[#DDD6FE] border border-[#C4B5FD]">

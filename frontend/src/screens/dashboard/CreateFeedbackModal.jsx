@@ -121,21 +121,25 @@ function CreateFeedbackModal({ isOpen, onClose }) {
             onChange={handleChange}
             className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#C4B5FD]"
           />
+{/* Rating Stars */}
+<div className="flex items-center gap-2">
+  {[1, 2, 3, 4, 5].map((star) => (
+    <Star
+      key={star}
+      onClick={() =>
+        setFormData({ ...formData, rating: star })
+      }
+      className={`w-8 h-8 cursor-pointer transition 
+        ${
+          star <= formData.rating
+            ? "text-yellow-400 fill-yellow-400"
+            : "text-gray-300"
+        }
+      `}
+    />
+  ))}
+</div>
 
-          {/* Rating */}
-          <select
-            name="rating"
-            value={formData.rating}
-            onChange={handleChange}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#C4B5FD]"
-          >
-            <option value="">Select Rating</option>
-            <option value="1">1 - Very Bad</option>
-            <option value="2">2 - Bad</option>
-            <option value="3">3 - Average</option>
-            <option value="4">4 - Good</option>
-            <option value="5">5 - Excellent</option>
-          </select>
 
           {/* Comment */}
           <textarea
