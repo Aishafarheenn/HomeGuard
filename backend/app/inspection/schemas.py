@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from datetime import datetime, date
 from uuid import UUID
-from typing import Optional
+from typing import Optional, Any
 
 # InspectionPackage Schemas
 class InspectionPackageBase(BaseModel):
@@ -35,6 +35,22 @@ class InspectionScheduleResponse(InspectionScheduleBase):
     class Config:
         from_attributes = True
 
+
+class OwnerJobItem(BaseModel):
+    """One job (schedule) for owner with optional assignment and inspection status."""
+    schedule_id: UUID
+    scheduled_date: date
+    property_address: str
+    package_name: str
+    schedule_status: str
+    created_at: datetime
+    job_ticket_id: Optional[UUID] = None
+    job_ticket_status: Optional[str] = None
+    inspector_name: Optional[str] = None
+    inspection_status: Optional[str] = None
+    assigned_at: Optional[datetime] = None
+    inspection_completed_at: Optional[datetime] = None
+
 # JobTickets Schemas
 class JobTicketBase(BaseModel):
     schedule_id: UUID
@@ -50,11 +66,69 @@ class JobTicketResponse(JobTicketBase):
     class Config:
         from_attributes = True
 
+
+# Nested schemas for job ticket list/detail (schedule with property, owner; inspector)
+class PropertySummary(BaseModel):
+    id: UUID
+    address: str
+    class Config:
+        from_attributes = True
+
+
+class OwnerSummary(BaseModel):
+    id: UUID
+    full_name: str
+    email: str
+    class Config:
+        from_attributes = True
+
+
+class InspectorSummary(BaseModel):
+    id: UUID
+    full_name: str
+    email: str
+    class Config:
+        from_attributes = True
+
+
+class PackageSummary(BaseModel):
+    id: UUID
+    name: str
+    class Config:
+        from_attributes = True
+
+
+class ScheduleWithRelations(BaseModel):
+    id: UUID
+    owner_id: UUID
+    property_id: UUID
+    package_id: UUID
+    scheduled_date: date
+    frequency: str
+    status: str
+    created_at: datetime
+    property: Optional[PropertySummary] = None
+    owner: Optional[OwnerSummary] = None
+    package: Optional[PackageSummary] = None
+    class Config:
+        from_attributes = True
+
+
+class JobTicketResponseWithRelations(JobTicketBase):
+    id: UUID
+    assigned_at: Optional[datetime] = None
+    schedule: Optional[ScheduleWithRelations] = None
+    inspector: Optional[InspectorSummary] = None
+    inspections: Optional[list["InspectionResponse"]] = None
+    class Config:
+        from_attributes = True
+
+
 # Inspection Schemas
 class InspectionBase(BaseModel):
     job_ticket_id: UUID
-    start_time: datetime
-    end_time: datetime
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
     overall_status: str
 
 class InspectionCreate(InspectionBase):
@@ -112,8 +186,43 @@ class InspectionChecklistResultBase(BaseModel):
 class InspectionChecklistResultCreate(InspectionChecklistResultBase):
     pass
 
+
+class InspectionChecklistResultUpdate(BaseModel):
+    status: Optional[str] = None
+    remark: Optional[str] = None
+
+
 class InspectionChecklistResultResponse(InspectionChecklistResultBase):
     id: UUID
     class Config:
         from_attributes = True
-     
+
+
+class ChecklistItemSummary(BaseModel):
+    id: UUID
+    area_name: str
+    class Config:
+        from_attributes = True
+
+
+class OwnerJobReportChecklistItem(BaseModel):
+    area_name: str
+    status: str
+    remark: str
+
+
+class OwnerJobReportResponse(BaseModel):
+    """Inspection report view for owner: inspection summary + checklist + report notes."""
+    inspection_id: UUID
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+    overall_status: str
+    checklist_results: list[OwnerJobReportChecklistItem] = []
+    report_notes: Optional[str] = None
+    report_url: Optional[str] = None
+
+
+class InspectionChecklistResultWithItemResponse(InspectionChecklistResultResponse):
+    checklist_item: Optional[ChecklistItemSummary] = None
+    class Config:
+        from_attributes = True

@@ -35,7 +35,8 @@ class InspectionReport(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     inspection_id = Column(UUID(as_uuid=True), ForeignKey("inspections.id"), index=True)
     generated_at = Column(DateTime(timezone=True), server_default=func.now())
-    report_url = Column(Text, nullable=False)
+    report_url = Column(Text, nullable=True)
+    report_notes = Column(Text, nullable=True)
 
     # relationships
     inspection = relationship("Inspection", back_populates="inspection_reports")

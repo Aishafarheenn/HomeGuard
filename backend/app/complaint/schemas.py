@@ -4,13 +4,15 @@ from uuid import UUID
 
 
 class ComplaintCreate(BaseModel):
-    name: str
-    email: str
+    """Request body: only message. Name and email come from logged-in user."""
     message: str
 
 
-class ComplaintResponse(ComplaintCreate):
+class ComplaintResponse(BaseModel):
     id: UUID
+    name: str
+    email: str
+    message: str
     created_at: datetime
 
     class Config:

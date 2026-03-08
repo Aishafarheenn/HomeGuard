@@ -5,7 +5,7 @@ import { propertyServices } from '../../services/requests/propertyServices'
 import { ownerServices } from '../../services/requests/ownerServices'
 import LocationPickerMap from '../../components/LocationPickerMap'
 
-function CreatePropertyModal({ isOpen, onClose, onSuccess }) {
+function EditPropertyModal({ isOpen, onClose, onSuccess, propertyId }) {
   const { user } = useAuth()
   const isOwner = user?.role === 'owner'
   const [loading, setLoading] = useState(false)
@@ -19,10 +19,18 @@ function CreatePropertyModal({ isOpen, onClose, onSuccess }) {
   })
 
   useEffect(() => {
-    if (isOpen && !isOwner) {
-      ownerServices.getOwners().then((data) => setOwners(Array.isArray(data) ? data : [])).catch(() => setOwners([]))
+    if (isOpen && propertyId) {
+      if (!isOwner) ownerServices.getOwners().then((data) => setOwners(Array.isArray(data) ? data : [])).catch(() => setOwners([]))
+      propertyServices.getPropertyById(propertyId).then((p) => {
+        setFormData({
+          address: p.address ?? '',
+          latitude: p.latitude != null ? String(p.latitude) : '',
+          longitude: p.longitude != null ? String(p.longitude) : '',
+          owner_id: p.owner_id ?? '',
+        })
+      }).catch(() => setError('Failed to load property'))
     }
-  }, [isOpen, isOwner])
+  }, [isOpen, propertyId])
 
   const handleChange = (e) => {
     setError('')
@@ -45,24 +53,23 @@ function CreatePropertyModal({ isOpen, onClose, onSuccess }) {
       setError('Address is required.')
       return
     }
-    const ownerId = isOwner ? user?.id : formData.owner_id
-    if (!ownerId) {
+    if (!isOwner && !formData.owner_id) {
       setError('Please select an owner.')
       return
     }
     setLoading(true)
     try {
-      await propertyServices.createProperty({
+      const payload = {
         address: formData.address.trim(),
         latitude: formData.latitude || null,
         longitude: formData.longitude || null,
-        owner_id: ownerId,
-      })
-      setFormData({ address: '', latitude: '', longitude: '', owner_id: '' })
+      }
+      if (!isOwner) payload.owner_id = formData.owner_id
+      await propertyServices.updateProperty(propertyId, payload)
       onSuccess?.()
       onClose()
     } catch (err) {
-      const detail = err.response?.data?.detail ?? err.message ?? 'Failed to add property'
+      const detail = err.response?.data?.detail ?? err.message ?? 'Failed to update property'
       setError(Array.isArray(detail) ? detail.join(' ') : String(detail))
     } finally {
       setLoading(false)
@@ -72,7 +79,6 @@ function CreatePropertyModal({ isOpen, onClose, onSuccess }) {
   const handleClose = () => {
     if (!loading) {
       setError('')
-      setFormData({ address: '', latitude: '', longitude: '', owner_id: '' })
       onClose()
     }
   }
@@ -88,7 +94,7 @@ function CreatePropertyModal({ isOpen, onClose, onSuccess }) {
             <span className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center">
               <MapPin className="w-5 h-5 text-violet-600" />
             </span>
-            <h2 className="text-lg font-semibold text-slate-900">Create property</h2>
+            <h2 className="text-lg font-semibold text-slate-900">Edit property</h2>
           </div>
           <button type="button" onClick={handleClose} disabled={loading} className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-600 disabled:opacity-50" aria-label="Close">
             <X className="w-5 h-5" />
@@ -132,7 +138,8 @@ function CreatePropertyModal({ isOpen, onClose, onSuccess }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">Location (select on map)</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">Property location</label>
+            <p className="text-xs text-slate-500 mb-2">Click on the map to set or update the location. Drag the marker to adjust.</p>
             <LocationPickerMap
               latitude={formData.latitude || undefined}
               longitude={formData.longitude || undefined}
@@ -171,7 +178,7 @@ function CreatePropertyModal({ isOpen, onClose, onSuccess }) {
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={handleClose} disabled={loading} className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-700 font-medium hover:bg-slate-50 disabled:opacity-50">Cancel</button>
             <button type="submit" disabled={loading} className="flex-1 py-3 rounded-xl bg-violet-600 text-white font-semibold hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed">
-              {loading ? 'Creating…' : 'Create property'}
+              {loading ? 'Saving…' : 'Save changes'}
             </button>
           </div>
         </form>
@@ -180,4 +187,4 @@ function CreatePropertyModal({ isOpen, onClose, onSuccess }) {
   )
 }
 
-export default CreatePropertyModal
+export default EditPropertyModal

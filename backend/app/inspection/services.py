@@ -1,9 +1,12 @@
+from uuid import UUID
+from datetime import datetime, timezone
+
 from fastapi import HTTPException, status
-from sqlalchemy.orm import Session, selectinload
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.orm import Session, selectinload
+
 from app.inspection import models as inspection_models
 from app.inspection import schemas as inspection_schemas
-from uuid import UUID
 
 # InspectionPackage Services
 def get_all_packages(db: Session):
@@ -42,7 +45,147 @@ def get_all_schedules(db: Session):
     try:
         return db.query(inspection_models.InspectionSchedule).all()
     except SQLAlchemyError as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error: {str(e)}",
+        )
+
+
+def get_schedules_for_owner(owner_id: UUID, db: Session):
+    """Schedules for a specific owner."""
+    try:
+        return (
+            db.query(inspection_models.InspectionSchedule)
+            .filter(inspection_models.InspectionSchedule.owner_id == owner_id)
+            .all()
+        )
+    except SQLAlchemyError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error: {str(e)}",
+        )
+
+
+def get_owner_jobs(owner_id: UUID, db: Session):
+    """Schedules for owner with job ticket and inspection status (for My Jobs view)."""
+    try:
+        schedules = (
+            db.query(inspection_models.InspectionSchedule)
+            .filter(inspection_models.InspectionSchedule.owner_id == owner_id)
+            .options(
+                selectinload(inspection_models.InspectionSchedule.property),
+                selectinload(inspection_models.InspectionSchedule.package),
+                selectinload(inspection_models.InspectionSchedule.job_tickets).selectinload(
+                    inspection_models.JobTickets.inspector
+                ),
+                selectinload(inspection_models.InspectionSchedule.job_tickets).selectinload(
+                    inspection_models.JobTickets.inspections
+                ),
+            )
+            .order_by(inspection_models.InspectionSchedule.scheduled_date.desc())
+            .all()
+        )
+        result = []
+        for s in schedules:
+            item = {
+                "schedule_id": s.id,
+                "scheduled_date": s.scheduled_date,
+                "property_address": s.property.address if s.property else "",
+                "package_name": s.package.name if s.package else "",
+                "schedule_status": s.status,
+                "created_at": s.created_at,
+                "job_ticket_id": None,
+                "job_ticket_status": None,
+                "inspector_name": None,
+                "inspection_status": None,
+                "assigned_at": None,
+                "inspection_completed_at": None,
+            }
+            if s.job_tickets:
+                jt = s.job_tickets[0]
+                item["job_ticket_id"] = jt.id
+                item["job_ticket_status"] = jt.status
+                item["assigned_at"] = jt.assigned_at
+                if jt.inspector:
+                    item["inspector_name"] = jt.inspector.full_name
+                if jt.inspections:
+                    _ts = lambda i: i.end_time or i.start_time or datetime(1970, 1, 1, tzinfo=timezone.utc)
+                    latest = max(jt.inspections, key=_ts)
+                    item["inspection_status"] = latest.overall_status
+                    if (latest.overall_status or "").lower() == "completed":
+                        item["inspection_completed_at"] = latest.end_time or latest.start_time
+            result.append(inspection_schemas.OwnerJobItem(**item))
+        return result
+    except SQLAlchemyError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error: {str(e)}",
+        )
+
+
+def get_owner_job_report(schedule_id: UUID, owner_id: UUID, db: Session):
+    """Inspection report for an owner's job (schedule). Returns 404 if no inspection yet."""
+    schedule = (
+        db.query(inspection_models.InspectionSchedule)
+        .filter(
+            inspection_models.InspectionSchedule.id == schedule_id,
+            inspection_models.InspectionSchedule.owner_id == owner_id,
+        )
+        .options(
+            selectinload(inspection_models.InspectionSchedule.job_tickets).selectinload(
+                inspection_models.JobTickets.inspections
+            ),
+        )
+        .first()
+    )
+    if not schedule:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Schedule not found or access denied",
+        )
+    inspection = None
+    if schedule.job_tickets:
+        jt = schedule.job_tickets[0]
+        if jt.inspections:
+            _ts = lambda i: i.end_time or i.start_time or datetime(1970, 1, 1, tzinfo=timezone.utc)
+            inspection = max(jt.inspections, key=_ts)
+    if not inspection:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No inspection report yet for this job",
+        )
+    results = (
+        db.query(inspection_models.InspectionChecklistResults)
+        .options(
+            selectinload(inspection_models.InspectionChecklistResults.checklist),
+        )
+        .filter(inspection_models.InspectionChecklistResults.inspection_id == inspection.id)
+        .all()
+    )
+    from app.reports import models as reports_models
+
+    report_row = (
+        db.query(reports_models.InspectionReport)
+        .filter(reports_models.InspectionReport.inspection_id == inspection.id)
+        .first()
+    )
+    checklist_items = [
+        inspection_schemas.OwnerJobReportChecklistItem(
+            area_name=r.checklist.area_name if r.checklist else "",
+            status=r.status,
+            remark=r.remark,
+        )
+        for r in results
+    ]
+    return inspection_schemas.OwnerJobReportResponse(
+        inspection_id=inspection.id,
+        start_time=inspection.start_time,
+        end_time=inspection.end_time,
+        overall_status=inspection.overall_status or "",
+        checklist_results=checklist_items,
+        report_notes=report_row.report_notes if report_row else None,
+        report_url=report_row.report_url if report_row else None,
+    )
 
 def get_schedule_by_id(schedule_id: UUID, db: Session):
     try:
@@ -70,15 +213,52 @@ def create_schedule(schedule_data: inspection_schemas.InspectionScheduleCreate, 
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error: {str(e)}")
 
 # JobTickets Services
+def _jobticket_list_options():
+    """Eager load schedule (with property, owner, package), inspector, and inspections for list/detail."""
+    return [
+        selectinload(inspection_models.JobTickets.schedule).selectinload(inspection_models.InspectionSchedule.property),
+        selectinload(inspection_models.JobTickets.schedule).selectinload(inspection_models.InspectionSchedule.owner),
+        selectinload(inspection_models.JobTickets.schedule).selectinload(inspection_models.InspectionSchedule.package),
+        selectinload(inspection_models.JobTickets.inspector),
+        selectinload(inspection_models.JobTickets.inspections),
+    ]
+
+
 def get_all_jobtickets(db: Session):
     try:
-        return db.query(inspection_models.JobTickets).options(selectinload(inspection_models.JobTickets.inspectionSchedule)).all()
+        return db.query(inspection_models.JobTickets).options(
+            *_jobticket_list_options()
+        ).all()
     except SQLAlchemyError as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error: {str(e)}",
+        )
+
+
+def get_jobtickets_for_inspector(inspector_id: UUID, db: Session):
+    """Job tickets assigned to a specific inspector."""
+    try:
+        return (
+            db.query(inspection_models.JobTickets)
+            .options(*_jobticket_list_options())
+            .filter(inspection_models.JobTickets.inspector_id == inspector_id)
+            .all()
+        )
+    except SQLAlchemyError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error: {str(e)}",
+        )
 
 def get_jobticket_by_id(job_ticket_id: UUID, db: Session):
     try:
-        ticket = db.query(inspection_models.JobTickets).options(selectinload(inspection_models.JobTickets.inspectionSchedule)).filter(inspection_models.JobTickets.id == job_ticket_id).first()
+        ticket = (
+            db.query(inspection_models.JobTickets)
+            .options(*_jobticket_list_options())
+            .filter(inspection_models.JobTickets.id == job_ticket_id)
+            .first()
+        )
         if not ticket:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job ticket not found")
         return ticket
@@ -93,6 +273,35 @@ def create_jobticket(ticket_data: inspection_schemas.JobTicketCreate, db: Sessio
         db.add(new_ticket)
         db.commit()
         db.refresh(new_ticket)
+        # Notify inspector of assignment
+        schedule = (
+            db.query(inspection_models.InspectionSchedule)
+            .options(selectinload(inspection_models.InspectionSchedule.property))
+            .filter(inspection_models.InspectionSchedule.id == new_ticket.schedule_id)
+            .first()
+        )
+        if schedule and schedule.property:
+            from app.notifications import services as notification_services
+            notification_services.notify_inspector_assignment(
+                new_ticket.inspector_id,
+                new_ticket.id,
+                schedule.property.address or "Property",
+                db,
+            )
+            # Notify owner that an inspector has been assigned
+            from app.inspector import models as inspector_models
+            inspector = (
+                db.query(inspector_models.Inspector)
+                .filter(inspector_models.Inspector.id == new_ticket.inspector_id)
+                .first()
+            )
+            inspector_name = inspector.full_name if inspector else "Inspector"
+            notification_services.notify_owner_inspector_assigned(
+                schedule.owner_id,
+                schedule.property.address or "Property",
+                inspector_name,
+                db,
+            )
         return new_ticket
     except IntegrityError:
         db.rollback()
@@ -104,27 +313,72 @@ def create_jobticket(ticket_data: inspection_schemas.JobTicketCreate, db: Sessio
 # Inspection Services
 def get_all_inspection(db: Session):
     try:
-        return db.query(inspection_models.Inspection).options(selectinload(inspection_models.Inspection.jobTickets)).all()
+        return db.query(inspection_models.Inspection).options(
+            selectinload(inspection_models.Inspection.job_ticket)
+        ).all()
     except SQLAlchemyError as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error: {str(e)}",
+        )
 
 def get_inspection_by_id(inspection_id: UUID, db: Session):
     try:
-        inspection = db.query(inspection_models.Inspection).options(selectinload(inspection_models.Inspection.jobTickets)).filter(inspection_models.Inspection.id == inspection_id).first()
+        inspection = (
+            db.query(inspection_models.Inspection)
+            .options(selectinload(inspection_models.Inspection.job_ticket))
+            .filter(inspection_models.Inspection.id == inspection_id)
+            .first()
+        )
         if not inspection:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Inspection not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Inspection not found"
+            )
         return inspection
     except HTTPException:
         raise
     except SQLAlchemyError as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error: {str(e)}",
+        )
+
+def _notify_owner_if_completed(inspection, db: Session):
+    """If inspection overall_status is completed, notify owner."""
+    if not inspection or (inspection.overall_status or "").lower() != "completed":
+        return
+    job_ticket = (
+        db.query(inspection_models.JobTickets)
+        .options(
+            selectinload(inspection_models.JobTickets.schedule).selectinload(inspection_models.InspectionSchedule.owner),
+            selectinload(inspection_models.JobTickets.schedule).selectinload(inspection_models.InspectionSchedule.property),
+        )
+        .filter(inspection_models.JobTickets.id == inspection.job_ticket_id)
+        .first()
+    )
+    if not job_ticket or not job_ticket.schedule:
+        return
+    owner_id = job_ticket.schedule.owner_id
+    property_address = (job_ticket.schedule.property and job_ticket.schedule.property.address) or "Property"
+    from app.notifications import services as notification_services
+    notification_services.notify_owner_inspection_complete(owner_id, property_address, db)
+
 
 def create_inspection(inspection_data: inspection_schemas.InspectionCreate, db: Session):
     try:
         new_inspection = inspection_models.Inspection(**inspection_data.model_dump())
         db.add(new_inspection)
+        db.flush()
+        job_ticket = (
+            db.query(inspection_models.JobTickets)
+            .filter(inspection_models.JobTickets.id == new_inspection.job_ticket_id)
+            .first()
+        )
+        if job_ticket and (job_ticket.status or "").lower() not in ("in_progress", "completed"):
+            job_ticket.status = "in_progress"
         db.commit()
         db.refresh(new_inspection)
+        _notify_owner_if_completed(new_inspection, db)
         return new_inspection
     except IntegrityError:
         db.rollback()
@@ -138,11 +392,39 @@ def update_inspection(inspection_id: UUID, inspection_data: inspection_schemas.I
         inspection = db.query(inspection_models.Inspection).filter(inspection_models.Inspection.id == inspection_id).first()
         if not inspection:
             return None
+        new_status = (inspection_data.overall_status or inspection.overall_status or "").lower()
+        if new_status == "completed":
+            checklist_count = db.query(inspection_models.InspectionChecklistResults).filter(
+                inspection_models.InspectionChecklistResults.inspection_id == inspection_id
+            ).count()
+            from app.reports import models as reports_models
+            report_row = (
+                db.query(reports_models.InspectionReport)
+                .filter(reports_models.InspectionReport.inspection_id == inspection_id)
+                .first()
+            )
+            has_report_notes = bool(report_row and report_row.report_notes and report_row.report_notes.strip())
+            if checklist_count < 1 and not has_report_notes:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Add at least one checklist item or report note before completing.",
+                )
         for field, value in inspection_data.model_dump(exclude_unset=True).items():
             setattr(inspection, field, value)
+        if (inspection.overall_status or "").lower() == "completed" and inspection.job_ticket_id:
+            job_ticket = (
+                db.query(inspection_models.JobTickets)
+                .filter(inspection_models.JobTickets.id == inspection.job_ticket_id)
+                .first()
+            )
+            if job_ticket:
+                job_ticket.status = "completed"
         db.commit()
         db.refresh(inspection)
+        _notify_owner_if_completed(inspection, db)
         return inspection
+    except HTTPException:
+        raise
     except SQLAlchemyError as e:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error: {str(e)}")
@@ -209,6 +491,21 @@ def get_checklist_by_id(checklist_id: UUID, db: Session):
     except SQLAlchemyError as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error: {str(e)}")
 
+
+def get_checklist_items_by_package(package_id: UUID, db: Session):
+    """Checklist items (areas) for a package."""
+    try:
+        return (
+            db.query(inspection_models.Checklist)
+            .filter(inspection_models.Checklist.package_id == package_id)
+            .all()
+        )
+    except SQLAlchemyError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error: {str(e)}",
+        )
+
 def create_checklist(checklist_data: inspection_schemas.ChecklistCreate, db: Session):
     try:
         new_checklist = inspection_models.Checklist(**checklist_data.model_dump())
@@ -247,6 +544,25 @@ def get_checklist_result_by_id(result_id: UUID, db: Session):
     except SQLAlchemyError as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error: {str(e)}")
 
+def get_checklist_results_by_inspection_id(inspection_id: UUID, db: Session):
+    """Checklist results for an inspection, with checklist item (area_name) loaded."""
+    try:
+        return (
+            db.query(inspection_models.InspectionChecklistResults)
+            .options(
+                selectinload(inspection_models.InspectionChecklistResults.inspection),
+                selectinload(inspection_models.InspectionChecklistResults.checklist),
+            )
+            .filter(inspection_models.InspectionChecklistResults.inspection_id == inspection_id)
+            .all()
+        )
+    except SQLAlchemyError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error: {str(e)}",
+        )
+
+
 def create_checklist_result(result_data: inspection_schemas.InspectionChecklistResultCreate, db: Session):
     try:
         new_result = inspection_models.InspectionChecklistResults(**result_data.model_dump())
@@ -260,4 +576,35 @@ def create_checklist_result(result_data: inspection_schemas.InspectionChecklistR
     except SQLAlchemyError as e:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error: {str(e)}")
+
+
+def update_checklist_result(
+    result_id: UUID,
+    update_data: inspection_schemas.InspectionChecklistResultUpdate,
+    db: Session,
+):
+    try:
+        result = (
+            db.query(inspection_models.InspectionChecklistResults)
+            .filter(inspection_models.InspectionChecklistResults.id == result_id)
+            .first()
+        )
+        if not result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Checklist result not found",
+            )
+        for field, value in update_data.model_dump(exclude_unset=True).items():
+            setattr(result, field, value)
+        db.commit()
+        db.refresh(result)
+        return result
+    except HTTPException:
+        raise
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error: {str(e)}",
+        )
 

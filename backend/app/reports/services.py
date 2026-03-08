@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session, selectinload
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -131,9 +132,14 @@ def delete_red_flag(red_flag_id: UUID, db: Session):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error: {str(e)}")
 
 # InspectionReport Services
-def get_all_inspection_reports(db: Session):
+def get_all_inspection_reports(db: Session, inspection_id: Optional[UUID] = None):
     try:
-        return db.query(reports_models.InspectionReport).options(selectinload(reports_models.InspectionReport.inspection)).all()
+        q = db.query(reports_models.InspectionReport).options(
+            selectinload(reports_models.InspectionReport.inspection)
+        )
+        if inspection_id is not None:
+            q = q.filter(reports_models.InspectionReport.inspection_id == inspection_id)
+        return q.all()
     except SQLAlchemyError as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error: {str(e)}")
 

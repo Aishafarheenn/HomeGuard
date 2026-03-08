@@ -6,8 +6,6 @@ function CreateFeedbackModal({ isOpen, onClose }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
     rating: "",
     comment: "",
   });
@@ -22,26 +20,19 @@ function CreateFeedbackModal({ isOpen, onClose }) {
     e.preventDefault();
     setError("");
 
-    if (
-      !formData.name.trim() ||
-      !formData.email.trim() ||
-      !formData.rating ||
-      !formData.comment.trim()
-    ) {
-      setError("All fields are required");
+    if (!formData.rating || !formData.comment.trim()) {
+      setError("Rating and comment are required");
       return;
     }
 
     setLoading(true);
     try {
       await feedbackService.CreateFeedback({
-        name: formData.name.trim(),
-        email: formData.email.trim(),
         rating: Number(formData.rating),
         comment: formData.comment.trim(),
       });
 
-      setFormData({ name: "", email: "", rating: "", comment: "",});
+      setFormData({ rating: "", comment: "" });
     } catch (err) {
       const detail =
         err.response?.data?.detail ??
@@ -57,7 +48,7 @@ function CreateFeedbackModal({ isOpen, onClose }) {
   const handleClose = () => {
     if (!loading) {
       setError("");
-      setFormData({ name: "", email: "", rating: "", comment: "", });
+      setFormData({ rating: "", comment: "" });
     }
     onClose();
   };
@@ -102,26 +93,11 @@ function CreateFeedbackModal({ isOpen, onClose }) {
             </div>
           )}
 
-          {/* Name */}
-          <input
-            type="text"
-            name="name"
-            placeholder="Enter your name"
-            value={formData.name}
-            onChange={handleChange}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#C4B5FD]"
-          />
+          <p className="text-sm text-slate-500">
+            Feedback will be submitted with your logged-in account (name and email are added automatically).
+          </p>
 
-          {/* Email */}
-          <input
-            type="email"
-            name="email"
-            placeholder="Enter your email"
-            value={formData.email}
-            onChange={handleChange}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#C4B5FD]"
-          />
-{/* Rating Stars */}
+          {/* Rating Stars */}
 <div className="flex items-center gap-2">
   {[1, 2, 3, 4, 5].map((star) => (
     <Star

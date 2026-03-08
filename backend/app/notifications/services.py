@@ -94,7 +94,16 @@ def notify_inspector_assignment(inspector_id: UUID, job_ticket_id: UUID, propert
     )
     return create_notification(notification_data, db)
 
-# Helper function to create notification for owner
+# Helper function to create notification for owner when inspector is assigned
+def notify_owner_inspector_assigned(owner_id: UUID, property_address: str, inspector_name: str, db: Session):
+    notification_data = notifications_schemas.NotificationCreate(
+        user_id=owner_id,
+        user_type="owner",
+        message=f"Inspector {inspector_name} assigned for property: {property_address}"
+    )
+    return create_notification(notification_data, db)
+
+# Helper function to create notification for owner when inspection is completed
 def notify_owner_inspection_complete(owner_id: UUID, property_address: str, db: Session):
     notification_data = notifications_schemas.NotificationCreate(
         user_id=owner_id,

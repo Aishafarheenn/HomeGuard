@@ -52,10 +52,13 @@ class RedFlagUpdate(BaseModel):
 # InspectionReport Schemas
 class InspectionReportBase(BaseModel):
     inspection_id: UUID
-    report_url: str
+    report_url: Optional[str] = None
+    report_notes: Optional[str] = None
+
 
 class InspectionReportCreate(InspectionReportBase):
     pass
+
 
 class InspectionReportResponse(InspectionReportBase):
     id: UUID
@@ -63,8 +66,10 @@ class InspectionReportResponse(InspectionReportBase):
     class Config:
         from_attributes = True
 
+
 class InspectionReportUpdate(BaseModel):
     report_url: Optional[str] = None
+    report_notes: Optional[str] = None
     class Config:
         from_attributes = True
     

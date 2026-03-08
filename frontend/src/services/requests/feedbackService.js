@@ -4,14 +4,12 @@ import { endpoint } from "../endpoints";
 export const feedbackService = {
     CreateFeedback: async (data) => {
         const payload = {
-           name: data.name,
-           email: data.email,
-           rating: data.rating,
-           comment: data.comment
-        }
-        const response = await api.post(endpoint.Feedback.create, payload )
-        return response.data
-       },
+            rating: data.rating,
+            comment: data.comment,
+        };
+        const response = await api.post(endpoint.Feedback.create, payload);
+        return response.data;
+    },
 
        getFeedback: async () => {
         const response = await api.get(endpoint.Feedback.get)

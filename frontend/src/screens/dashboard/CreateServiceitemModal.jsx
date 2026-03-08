@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { X, Package } from 'lucide-react'
 import { serviceItems } from '../../services/requests/ServiceItems'
 
-function CreateServiceitemModal({ isOpen, onClose }) {
+function CreateServiceitemModal({ isOpen, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [formData, setFormData] = useState({
@@ -32,6 +32,7 @@ function CreateServiceitemModal({ isOpen, onClose }) {
         price: formData.price,
       })
       setFormData({ name: '', description: '', price: '' })
+      onSuccess?.()
       onClose()
     } catch (err) {
       const detail = err.response?.data?.detail ?? err.message ?? 'Failed to create package'

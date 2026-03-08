@@ -22,7 +22,7 @@ function Complaint() {
       setComplaints(complaintData)
       console.log(complaintData)
     } catch (err) {
-      console.error("Error fetching complaints", response.data?.error)
+      console.error("Error fetching complaints", err.response?.data ?? err.message)
     } finally {
       setLoading(false);
     }
@@ -116,6 +116,7 @@ function Complaint() {
       <CreateComplaintModal
   isOpen={isModalOpen}
   onClose={() => setIsModalOpen(false)}
+  onSuccess={fetchComplaints}
 />
     </div>
   );

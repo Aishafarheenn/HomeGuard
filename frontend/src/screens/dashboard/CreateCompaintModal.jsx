@@ -3,12 +3,10 @@ import { X, MessageSquare } from "lucide-react";
 import { newComplaint } from "../../services/requests/newComplaint";
 
 
-function CreateComplaintModal({ isOpen, onClose }) {
+function CreateComplaintModal({ isOpen, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
     message: "",
   });
 
@@ -22,20 +20,20 @@ function CreateComplaintModal({ isOpen, onClose }) {
     e.preventDefault();
     setError("");
 
-    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
-      setError("All fields are required");
+    if (!formData.message.trim()) {
+      setError("Message is required");
       return;
     }
 
     setLoading(true);
     try {
       await newComplaint.createComplaint({
-        name: formData.name.trim(),
-        email: formData.email.trim(),
         message: formData.message.trim(),
       });
 
-      setFormData({ name: "", email: "", message: "" });
+      setFormData({ message: "" });
+      onSuccess?.();
+      onClose();
     } catch (err) {
       const detail =
         err.response?.data?.detail ??
@@ -44,14 +42,13 @@ function CreateComplaintModal({ isOpen, onClose }) {
       setError(Array.isArray(detail) ? detail.join("") : String(detail));
     } finally {
       setLoading(false);
-      onClose();
     }
   };
 
   const handleClose = () => {
     if (!loading) {
       setError("");
-      setFormData({ name: "", email: "", message: "" });
+      setFormData({ message: "" });
     }
     onClose();
   };
@@ -98,33 +95,9 @@ function CreateComplaintModal({ isOpen, onClose }) {
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
-              Name
-            </label>
-            <input
-              type="text"
-              name="name"
-              placeholder="Enter your name"
-              value={formData.name}
-              onChange={handleChange}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#C4B5FD]"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
-              Email
-            </label>
-            <input
-              type="email"
-              name="email"
-              placeholder="Enter your email"
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#C4B5FD]"
-            />
-          </div>
+          <p className="text-sm text-slate-500">
+            Complaint will be submitted with your logged-in account (name and email are added automatically).
+          </p>
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">

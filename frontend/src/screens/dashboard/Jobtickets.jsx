@@ -1,71 +1,199 @@
-import React from 'react'
-import { Plus } from 'lucide-react'
+import React, { useEffect, useState, useCallback } from 'react'
+import { Link } from 'react-router-dom'
+import { Plus, RefreshCw, Ticket, MapPin, User, Calendar, ChevronRight, Inbox } from 'lucide-react'
+import { useAuth } from '../../context/AuthContext'
+import { createJobticketApi } from '../../services/requests/CreateJobticket'
+import CreateJobticketModal from './CreateJobticketModal'
 
-const mockTickets = [
-  { id: 1, property: 'Villa — Kochi', owner: 'Rahul M.', inspector: 'Arjun K.', issue: 'Electrical wiring check', priority: 'High', status: 'Open', date: '2026-02-16' },
-  { id: 2, property: 'Apartment — Calicut', owner: 'Nisha K.', inspector: 'Akhil M.', issue: 'Water leakage inspection', priority: 'Medium', status: 'In progress', date: '2026-02-14' },
-  { id: 3, property: 'House — Trivandrum', owner: 'Arun P.', inspector: 'Arjun K.', issue: 'Pre-purchase inspection', priority: 'High', status: 'Scheduled', date: '2026-02-18' },
-]
+function StatusBadge({ status }) {
+  const s = (status ?? '').toLowerCase()
+  const styles = {
+    assigned: 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300',
+    in_progress: 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300',
+    completed: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
+  }
+  const label = s === 'in_progress' ? 'In progress' : s === 'assigned' ? 'Assigned' : s === 'completed' ? 'Completed' : status ?? '—'
+  return (
+    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium capitalize ${styles[s] || 'bg-slate-100 text-slate-700'}`}>
+      {label}
+    </span>
+  )
+}
 
 function JobTickets() {
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'admin'
+  const isInspector = user?.role === 'inspector'
+  const [tickets, setTickets] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [error, setError] = useState(null)
+  const [createModalOpen, setCreateModalOpen] = useState(false)
+
+  const fetchTickets = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true)
+    else setLoading(true)
+    setError(null)
+    try {
+      const data = await createJobticketApi.getJobtickets()
+      setTickets(Array.isArray(data) ? data : [])
+    } catch (err) {
+      console.error(err)
+      setError('Failed to load job tickets')
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchTickets()
+  }, [fetchTickets])
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#1F2937]">Job tickets</h1>
-          <p className="text-slate-500 text-sm mt-0.5">Create and track inspection job tickets</p>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+            {isInspector ? 'My job tickets' : 'Job tickets'}
+          </h1>
+          <p className="text-slate-500 text-sm mt-1">
+            {isInspector
+              ? 'Your assigned inspections — open a job to start and complete it'
+              : 'Create and track inspection job tickets'}
+          </p>
         </div>
-        <button className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#A78BFA] text-white font-medium hover:bg-[#9333EA] transition shadow-sm shrink-0">
-          <Plus className="w-4 h-4" /> Create ticket
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => fetchTickets(true)}
+            disabled={loading || refreshing}
+            className="inline-flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 hover:border-slate-300 transition shrink-0 disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setCreateModalOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition shadow-sm shadow-violet-500/25 shrink-0"
+            >
+              <Plus className="w-4 h-4" /> Create ticket
+            </button>
+          )}
+        </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100">
-          <h2 className="font-semibold text-[#1F2937]">All job tickets</h2>
-          <p className="text-slate-500 text-sm mt-0.5">List of inspection and repair tickets</p>
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div className="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-slate-50/80 to-white">
+          <div className="flex items-center gap-3">
+            <span className="w-10 h-10 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center">
+              <Ticket className="w-5 h-5" />
+            </span>
+            <div>
+              <h2 className="font-semibold text-slate-900">
+                {isInspector ? 'Your assigned jobs' : 'All job tickets'}
+              </h2>
+              <p className="text-slate-500 text-sm mt-0.5">
+                {tickets.length} {tickets.length === 1 ? 'ticket' : 'tickets'}
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-slate-500 border-b border-slate-100 bg-slate-50/50">
-                <th className="py-3 px-6 font-medium">Property</th>
-                <th className="py-3 px-6 font-medium">Owner</th>
-                <th className="py-3 px-6 font-medium">Inspector</th>
-                <th className="py-3 px-6 font-medium">Issue</th>
-                <th className="py-3 px-6 font-medium">Priority</th>
-                <th className="py-3 px-6 font-medium">Status</th>
-                <th className="py-3 px-6 font-medium">Date</th>
-                <th className="py-3 px-6 font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {mockTickets.map((row) => (
-                <tr key={row.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50">
-                  <td className="py-3 px-6 font-medium text-[#1F2937]">{row.property}</td>
-                  <td className="py-3 px-6 text-slate-600">{row.owner}</td>
-                  <td className="py-3 px-6 text-slate-600">{row.inspector}</td>
-                  <td className="py-3 px-6 text-slate-600">{row.issue}</td>
-                  <td className="py-3 px-6">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${row.priority === 'High' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
-                      {row.priority}
-                    </span>
-                  </td>
-                  <td className="py-3 px-6">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${row.status === 'Completed' ? 'bg-emerald-100 text-emerald-700' : row.status === 'In progress' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'}`}>
-                      {row.status}
-                    </span>
-                  </td>
-                  <td className="py-3 px-6 text-slate-500">{row.date}</td>
-                  <td className="py-3 px-6">
-                    <button className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-[#7C3AED]">View</button>
-                  </td>
+
+        {loading && (
+          <div className="p-12 flex flex-col items-center justify-center text-slate-500">
+            <RefreshCw className="w-8 h-8 animate-spin text-violet-500 mb-3" />
+            <p className="text-sm font-medium">Loading job tickets…</p>
+          </div>
+        )}
+
+        {error && !loading && (
+          <div className="p-6 rounded-xl mx-4 mt-4 bg-red-50 border border-red-100 text-red-700 text-sm">
+            {error}
+          </div>
+        )}
+
+        {!loading && !error && tickets.length === 0 && (
+          <div className="p-12 flex flex-col items-center justify-center text-slate-500">
+            <span className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
+              <Inbox className="w-8 h-8 text-slate-400" />
+            </span>
+            <p className="font-medium text-slate-700">No job tickets yet</p>
+            <p className="text-sm mt-1">
+              {isInspector ? 'When jobs are assigned to you, they will appear here.' : 'Create a ticket to assign a schedule to an inspector.'}
+            </p>
+          </div>
+        )}
+
+        {!loading && !error && tickets.length > 0 && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-slate-500 border-b border-slate-100 bg-slate-50/70">
+                  <th className="py-3.5 px-6 font-medium">Property</th>
+                  {!isInspector && <th className="py-3.5 px-6 font-medium">Owner</th>}
+                  {!isInspector && <th className="py-3.5 px-6 font-medium">Inspector</th>}
+                  <th className="py-3.5 px-6 font-medium">Status</th>
+                  <th className="py-3.5 px-6 font-medium">Assigned</th>
+                  <th className="py-3.5 px-6 font-medium w-32">Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {tickets.map((row) => (
+                  <tr
+                    key={row.id}
+                    className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors group"
+                  >
+                    <td className="py-4 px-6">
+                      <div className="flex items-center gap-2">
+                        <span className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-violet-100 group-hover:text-violet-600 transition-colors">
+                          <MapPin className="w-4 h-4" />
+                        </span>
+                        <span className="font-medium text-slate-900">
+                          {row.schedule?.property?.address || '—'}
+                        </span>
+                      </div>
+                    </td>
+                    {!isInspector && (
+                      <>
+                        <td className="py-4 px-6 text-slate-600 flex items-center gap-1.5">
+                          <User className="w-3.5 h-3.5 text-slate-400" />
+                          {row.schedule?.owner?.full_name || '—'}
+                        </td>
+                        <td className="py-4 px-6 text-slate-600">{row.inspector?.full_name || '—'}</td>
+                      </>
+                    )}
+                    <td className="py-4 px-6">
+                      <StatusBadge status={row.status} />
+                    </td>
+                    <td className="py-4 px-6 text-slate-500 flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                      {row.assigned_at ? new Date(row.assigned_at).toLocaleDateString(undefined, { dateStyle: 'medium' }) : '—'}
+                    </td>
+                    <td className="py-4 px-6">
+                      <Link
+                        to={`/dashboard/jobtickets/${row.id}`}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-violet-50 text-violet-700 text-sm font-medium hover:bg-violet-100 hover:text-violet-800 transition"
+                      >
+                        View job
+                        <ChevronRight className="w-4 h-4" />
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
+
+      <CreateJobticketModal
+        isOpen={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onSuccess={fetchTickets}
+      />
     </div>
   )
 }

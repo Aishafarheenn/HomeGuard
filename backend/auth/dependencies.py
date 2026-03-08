@@ -54,3 +54,23 @@ def get_current_admin(current_user: CurrentUser = Depends(get_current_user)) -> 
             detail="Admin access required",
         )
     return current_user
+
+
+def get_current_owner(current_user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
+    """Require current user to be owner."""
+    if current_user.role != "owner":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Owner access required",
+        )
+    return current_user
+
+
+def get_current_inspector(current_user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
+    """Require current user to be inspector."""
+    if current_user.role != "inspector":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Inspector access required",
+        )
+    return current_user

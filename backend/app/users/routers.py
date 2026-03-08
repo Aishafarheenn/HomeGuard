@@ -1,57 +1,138 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+
 from app.users import schemas as user_schemas
 from app.users import services as user_services
+from auth.dependencies import (
+    CurrentUser,
+    get_current_admin,
+    get_current_owner,
+)
 from middleware.db import get_db
-from uuid import UUID
 
 router = APIRouter(prefix="/owners", tags=["owners"])
 
+
 @router.get("", response_model=list[user_schemas.OwnerResponse])
-def get_all_owners(db: Session = Depends(get_db)):
+def get_all_owners(
+    db: Session = Depends(get_db),
+    current_admin: CurrentUser = Depends(get_current_admin),
+):
     try:
         return user_services.get_all_owners(db)
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
 
 @router.get("/{owner_id}", response_model=user_schemas.OwnerResponse)
-def get_owner(owner_id: UUID, db: Session = Depends(get_db)):
+def get_owner(
+    owner_id: UUID,
+    db: Session = Depends(get_db),
+    current_admin: CurrentUser = Depends(get_current_admin),
+):
     try:
         return user_services.get_owner_by_id(owner_id, db)
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@router.get("/me", response_model=user_schemas.OwnerResponse)
+def get_me(
+    db: Session = Depends(get_db),
+    current_owner: CurrentUser = Depends(get_current_owner),
+):
+    """Return the current owner's profile."""
+    try:
+        return user_services.get_owner_by_id(current_owner.user_id, db)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
 
 @router.post("/create", response_model=user_schemas.OwnerResponse, status_code=status.HTTP_201_CREATED)
-def create_owner(owner_data: user_schemas.OwnerCreate, db: Session = Depends(get_db)):
+def create_owner(
+    owner_data: user_schemas.OwnerCreate,
+    db: Session = Depends(get_db),
+):
     try:
         return user_services.create_owner(owner_data, db)
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
 
 @router.put("/{owner_id}", response_model=user_schemas.OwnerResponse)
-def update_owner(owner_id: UUID, owner_data: user_schemas.OwnerUpdate, db: Session = Depends(get_db)):
+def update_owner(
+    owner_id: UUID,
+    owner_data: user_schemas.OwnerUpdate,
+    db: Session = Depends(get_db),
+    current_admin: CurrentUser = Depends(get_current_admin),
+):
     try:
         owner = user_services.update_owner(owner_id, owner_data, db)
         if not owner:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Owner not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Owner not found"
+            )
         return owner
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@router.put("/me", response_model=user_schemas.OwnerResponse)
+def update_me(
+    owner_data: user_schemas.OwnerUpdate,
+    db: Session = Depends(get_db),
+    current_owner: CurrentUser = Depends(get_current_owner),
+):
+    """Allow owners to update their own profile."""
+    try:
+        owner = user_services.update_owner(current_owner.user_id, owner_data, db)
+        if not owner:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Owner not found"
+            )
+        return owner
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
 
 @router.delete("/{owner_id}")
-def delete_owner(owner_id: UUID, db: Session = Depends(get_db)):
+def delete_owner(
+    owner_id: UUID,
+    db: Session = Depends(get_db),
+    current_admin: CurrentUser = Depends(get_current_admin),
+):
     try:
         result = user_services.delete_owner(owner_id, db)
         if not result:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Owner not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Owner not found"
+            )
         return {"message": "Owner deleted successfully"}
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
-
-    
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )

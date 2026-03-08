@@ -1,126 +1,171 @@
-import React ,{useState, useEffect}from 'react'
-import { Plus, Eye, Edit, Trash2, ClipboardList, FileText } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { Plus, Edit, Trash2, Loader2, MapPin, User, Inbox } from 'lucide-react'
+import { useAuth } from '../../context/AuthContext'
 import CreatePropertyModal from './CreatePropertyModal'
+import EditPropertyModal from './EditPropertyModal'
+import PropertiesMap from '../../components/PropertiesMap'
 import { propertyServices } from '../../services/requests/propertyServices'
 
-const features = [
-  // { title: 'Add property', description: 'Register a new property under an owner.', icon: Plus },
-  { title: 'View properties', description: 'See all registered properties.', icon: Eye },
-  { title: 'Update property', description: 'Modify property details and information.', icon: Edit },
-  { title: 'Delete property', description: 'Remove a property from the system.', icon: Trash2 },
-  { title: 'Property inspections', description: 'View inspections scheduled for properties.', icon: ClipboardList },
-  { title: 'Property reports', description: 'Access inspection reports and evidence.', icon: FileText },
-]
-
-const mockProperties = [
-  { id: 1, address: 'Villa — Kochi', owner: 'Rahul M.', type: 'Villa', status: 'Active' },
-  { id: 2, address: 'Apartment — Calicut', owner: 'Nisha K.', type: 'Apartment', status: 'Active' },
-  { id: 3, address: 'House — Trivandrum', owner: 'Arun P.', type: 'House', status: 'Pending' },
-]
-
 function Properties() {
-   const [modalOpen, setModalOpen] = useState(false)
-   const [loading, setLoading ] = useState(false)
-   const [properties, setproperties] = useState([])
+  const { user } = useAuth()
+  const isOwner = user?.role === 'owner'
+  const [modalOpen, setModalOpen] = useState(false)
+  const [editId, setEditId] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [properties, setProperties] = useState([])
+  const [deletingId, setDeletingId] = useState(null)
 
-   useEffect(() =>{
-    fetchProperty()
-   }, [])
-
-   const fetchProperty = async () =>{
+  const fetchProperties = async () => {
     setLoading(true)
-    try{
-      const response = await propertyServices.getProperty()
-      const propertyData = response?? []
-      setproperties(propertyData)
-      console.log(propertyData)
-    } catch (err){
-      console.error("failed to fetch property:",response.data?.error)
+    setError('')
+    try {
+      const data = await propertyServices.getProperties()
+      setProperties(Array.isArray(data) ? data : [])
+    } catch (err) {
+      const detail = err.response?.data?.detail ?? err.message ?? 'Failed to load properties'
+      setError(Array.isArray(detail) ? detail.join(' ') : String(detail))
+      setProperties([])
     } finally {
       setLoading(false)
     }
-   }
-   
+  }
+
+  useEffect(() => {
+    fetchProperties()
+  }, [])
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Delete this property?')) return
+    setDeletingId(id)
+    try {
+      await propertyServices.deleteProperty(id)
+      setProperties((prev) => prev.filter((p) => p.id !== id))
+    } catch (err) {
+      const detail = err.response?.data?.detail ?? err.message ?? 'Delete failed'
+      setError(Array.isArray(detail) ? detail.join(' ') : String(detail))
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#1F2937]">Properties</h1>
-          <p className="text-slate-500 text-sm mt-0.5">Manage properties and view inspection schedules</p>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Properties</h1>
+          <p className="text-slate-500 text-sm mt-1">
+            {isOwner ? 'Manage your properties and create inspection jobs' : 'View all registered properties'}
+          </p>
         </div>
-       <button
-                 type="button"
-                 onClick={() => setModalOpen(true)}
-                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#A78BFA] text-white font-medium hover:bg-[#9333EA] transition shadow-sm shrink-0"
-               >
-                 <Plus className="w-4 h-4" /> Add property
-               </button>
+        {isOwner && (
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition shadow-sm shadow-violet-500/25 shrink-0"
+          >
+            <Plus className="w-4 h-4" /> Add property
+          </button>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {features.map((item) => {
-          const Icon = item.icon
-          return (
-            <div
-              key={item.title}
-              className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md hover:border-[#DDD6FE] transition"
-            >
-              <div className="w-11 h-11 rounded-xl bg-[#EDE9FE] text-[#7C3AED] flex items-center justify-center mb-3">
-                <Icon className="w-5 h-5" />
-              </div>
-              <h2 className="font-semibold text-[#1F2937] mb-1">{item.title}</h2>
-              <p className="text-slate-500 text-sm mb-4">{item.description}</p>
-              <button className="w-full py-2 rounded-xl border border-slate-200 text-slate-700 font-medium hover:bg-slate-50 hover:border-[#C4B5FD] transition">
-                Open
-              </button>
+      {error && (
+        <div className="rounded-xl bg-red-50 border border-red-100 text-red-700 px-4 py-3 text-sm">{error}</div>
+      )}
+
+      {!loading && properties.length > 0 && (
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50/80 to-white">
+            <h2 className="font-semibold text-slate-900">Map view</h2>
+            <p className="text-slate-500 text-sm mt-0.5">Properties with latitude and longitude are shown on the map.</p>
+          </div>
+          <div className="p-4">
+            <PropertiesMap properties={properties} />
+          </div>
+        </div>
+      )}
+
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div className="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-slate-50/80 to-white">
+          <div className="flex items-center gap-3">
+            <span className="w-10 h-10 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center">
+              <MapPin className="w-5 h-5" />
+            </span>
+            <div>
+              <h2 className="font-semibold text-slate-900">All properties</h2>
+              <p className="text-slate-500 text-sm mt-0.5">{properties.length} {properties.length === 1 ? 'property' : 'properties'}</p>
             </div>
-          )
-        })}
+          </div>
+        </div>
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12 text-slate-500">
+            <Loader2 className="w-10 h-10 animate-spin text-violet-500 mb-3" />
+            <p className="text-sm font-medium">Loading properties…</p>
+          </div>
+        ) : properties.length === 0 ? (
+          <div className="py-12 px-6 flex flex-col items-center justify-center text-slate-500">
+            <span className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
+              <Inbox className="w-8 h-8 text-slate-400" />
+            </span>
+            <p className="font-medium text-slate-700">No properties yet</p>
+            <p className="text-sm mt-1">{isOwner ? 'Add a property to get started.' : 'No properties registered.'}</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-slate-500 border-b border-slate-100 bg-slate-50/70">
+                  <th className="py-3.5 px-6 font-medium">Address</th>
+                  <th className="py-3.5 px-6 font-medium">Owner</th>
+                  <th className="py-3.5 px-6 font-medium">Latitude</th>
+                  <th className="py-3.5 px-6 font-medium">Longitude</th>
+                  <th className="py-3.5 px-6 font-medium w-24">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {properties.map((row) => (
+                  <tr key={row.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors">
+                    <td className="py-3.5 px-6 font-medium text-slate-900 flex items-center gap-2">
+                      <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                      {row.address}
+                    </td>
+                    <td className="py-3.5 px-6 text-slate-600 flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-slate-400" />
+                      {row.owner?.full_name ?? row.owner_id ?? '—'}
+                    </td>
+                    <td className="py-3.5 px-6 text-slate-600">{row.latitude != null ? row.latitude : '—'}</td>
+                    <td className="py-3.5 px-6 text-slate-600">{row.longitude != null ? row.longitude : '—'}</td>
+                    <td className="py-3.5 px-6">
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setEditId(row.id)}
+                          className="p-2 rounded-xl text-slate-500 hover:bg-violet-50 hover:text-violet-600 transition"
+                          title="Edit"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(row.id)}
+                          disabled={deletingId === row.id}
+                          className="p-2 rounded-xl text-slate-500 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 transition"
+                          title="Delete"
+                        >
+                          {deletingId === row.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100">
-          <h2 className="font-semibold text-[#1F2937]">All properties</h2>
-          <p className="text-slate-500 text-sm mt-0.5">List of registered properties</p>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-slate-500 border-b border-slate-100 bg-slate-50/50">
-                <th className="py-3 px-6 font-medium">Address</th>
-                <th className="py-3 px-6 font-medium">Owner</th>
-                <th className="py-3 px-6 font-medium">Type</th>
-                <th className="py-3 px-6 font-medium">Status</th>
-                <th className="py-3 px-6 font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {properties.map((row) => (
-                <tr key={row.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50">
-                  <td className="py-3 px-6 font-medium text-[#1F2937]">{row.address}</td>
-                  <td className="py-3 px-6 text-slate-600">{row.owner}</td>
-                  <td className="py-3 px-6 text-slate-600">{row.type}</td>
-                  <td className="py-3 px-6">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${row.status === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                      {row.status}
-                    </span>
-                  </td>
-                  <td className="py-3 px-6">
-                    <div className="flex gap-2">
-                      <button className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-[#7C3AED]">View</button>
-                      <button className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-[#7C3AED]">Edit</button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <CreatePropertyModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-      />
+      <CreatePropertyModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onSuccess={fetchProperties} />
+      <EditPropertyModal isOpen={!!editId} onClose={() => setEditId(null)} onSuccess={fetchProperties} propertyId={editId} />
     </div>
   )
 }

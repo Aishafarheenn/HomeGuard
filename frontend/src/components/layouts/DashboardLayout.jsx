@@ -10,28 +10,28 @@ import {
   Users,
   Ticket,
   Bell,
+  BellRing,
   LogOut,
   Menu,
   ChevronLeft,
   MessageSquare,
+  ClipboardList,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
-
 
 
 const navItems = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/dashboard/serviceitems', label: 'Services', icon: Package },
   { path: '/dashboard/properties', label: 'Properties', icon: Home },
+  { path: '/dashboard/my-jobs', label: 'My Jobs', icon: ClipboardList },
   { path: '/dashboard/inspections', label: 'Inspections', icon: ClipboardCheck },
   { path: '/dashboard/inspector', label: 'Inspectors', icon: UserCog },
   { path: '/dashboard/owners', label: 'Owners', icon: Users },
   { path: '/dashboard/jobtickets', label: 'Job tickets', icon: Ticket },
+  { path: '/dashboard/notifications', label: 'Notifications', icon: BellRing },
   { path: '/dashboard/complaints', label: 'Complaints', icon: Bell },
   { path: '/dashboard/feedback', label: 'Feedback', icon: MessageSquare },
-  
-  
-  
 ]
 
 function DashboardLayout() {
@@ -39,6 +39,22 @@ function DashboardLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuth()
+
+  const roleNavMap = {
+    admin: navItems,
+    owner: navItems.filter((item) =>
+      ['/dashboard', '/dashboard/properties', '/dashboard/my-jobs', '/dashboard/inspections', '/dashboard/notifications', '/dashboard/complaints', '/dashboard/feedback'].includes(
+        item.path
+      )
+    ),
+    inspector: navItems.filter((item) =>
+      ['/dashboard', '/dashboard/jobtickets', '/dashboard/notifications', '/dashboard/feedback'].includes(
+        item.path
+      )
+    ),
+  }
+
+  const visibleNav = roleNavMap[user?.role] ?? roleNavMap.inspector ?? []
 
   const handleLogout = () => {
     logout()
@@ -72,7 +88,7 @@ function DashboardLayout() {
         </div>
 
         <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
-          {navItems.map((item) => {
+          {visibleNav.map((item) => {
             const isActive =
               item.path === '/dashboard'
                 ? location.pathname === '/dashboard'
