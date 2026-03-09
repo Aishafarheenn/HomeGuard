@@ -14,7 +14,6 @@ router = APIRouter(prefix="/admin", tags=["Admin"])
 def add_admin(
     payload: admin_schemas.AdminCreate,
     db: Session = Depends(get_db),
-    current_admin: CurrentUser = Depends(get_current_admin),
 ):
     try:
         return admin_services.create_admin(db, payload)
