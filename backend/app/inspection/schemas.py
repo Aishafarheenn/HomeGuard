@@ -54,7 +54,7 @@ class OwnerJobItem(BaseModel):
 # JobTickets Schemas
 class JobTicketBase(BaseModel):
     schedule_id: UUID
-    inspector_id: UUID
+    inspector_id: Optional[UUID] = None
     status: str
 
 class JobTicketCreate(JobTicketBase):
@@ -132,7 +132,9 @@ class InspectionBase(BaseModel):
     overall_status: str
 
 class InspectionCreate(InspectionBase):
-    pass
+    """Optional latitude/longitude required when inspector starts inspection (geo-verification)."""
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 class InspectionResponse(InspectionBase):
     id: UUID
@@ -211,8 +213,28 @@ class OwnerJobReportChecklistItem(BaseModel):
     remark: str
 
 
+class OwnerJobReportEvidenceItem(BaseModel):
+    id: UUID
+    media_type: str
+    media_url: str
+    area_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class OwnerJobReportRedFlagItem(BaseModel):
+    id: UUID
+    category: str
+    severity: str
+    description: str
+
+    class Config:
+        from_attributes = True
+
+
 class OwnerJobReportResponse(BaseModel):
-    """Inspection report view for owner: inspection summary + checklist + report notes."""
+    """Inspection report view for owner: inspection summary + checklist + report notes + evidence + red flags."""
     inspection_id: UUID
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
@@ -220,6 +242,8 @@ class OwnerJobReportResponse(BaseModel):
     checklist_results: list[OwnerJobReportChecklistItem] = []
     report_notes: Optional[str] = None
     report_url: Optional[str] = None
+    evidence: list[OwnerJobReportEvidenceItem] = []
+    red_flags: list[OwnerJobReportRedFlagItem] = []
 
 
 class InspectionChecklistResultWithItemResponse(InspectionChecklistResultResponse):

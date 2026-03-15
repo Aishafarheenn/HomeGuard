@@ -217,7 +217,7 @@ def get_jobticket(
     """Admin: any ticket. Inspector: only their assigned ticket."""
     try:
         ticket = inspection_services.get_jobticket_by_id(ticket_id, db)
-        if current_user.role == "inspector" and ticket.inspector_id != current_user.user_id:
+        if current_user.role == "inspector" and (ticket.inspector_id is None or ticket.inspector_id != current_user.user_id):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You do not have access to this job ticket",
@@ -356,12 +356,20 @@ def create_inspection(
 ):
     """
     Admin/Inspector: create inspections.
+    Inspectors must send latitude/longitude for geo-verification (start only when at property).
     Owner is not allowed to create inspections directly.
     """
     if current_user.role not in {"admin", "inspector"}:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not allowed to create inspections",
+        )
+    if current_user.role == "inspector" and (
+        inspection_data.latitude is None or inspection_data.longitude is None
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Location is required to start an inspection. Enable location access and try again.",
         )
     try:
         return inspection_services.create_inspection(inspection_data, db)

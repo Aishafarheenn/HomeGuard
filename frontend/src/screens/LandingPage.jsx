@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link } from 'react-router-dom'
 import {
   Shield,
@@ -73,7 +72,7 @@ function LandingPage() {
 
   return (
     <div className="min-h-screen bg-white text-slate-800 overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to- from-[#F5F3FF] via-white to-[#F5F3FF]" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#F5F3FF] via-white to-[#F5F3FF]" />
       <div className="absolute top-0 left-0 right-0  bg-[#EDE9FE]/50 pointer-events-none" />
 
       {/* Header */}
@@ -244,80 +243,38 @@ function LandingPage() {
           </div>
         </section>
 
-{/* Feedback section (optional) */}
-<section className="py-16 border-t border-slate-100 bg-slate-50">
-  <h2 className="text-2xl sm:text-3xl font-bold text-[#1F2937] text-center mb-4">
-    What our users say
-  </h2>
-  <p className="text-slate-600 text-center mb-10">
-    What our users say about HomeGuard
-  </p>
-
-  {/** STATE */}
-  {(() => {
-    const reviews = [
-      { name: "Melbin", comment: "Good thing" },
-      { name: "Aisha", comment: "Very smooth experience." },
-      { name: "Rahul", comment: "Excellent support." },
-    ];
-
-    const [activeIndex, setActiveIndex] = useState(1);
-
-    return (
-      <>
-        <div className="flex justify-center items-center gap-6 max-w-5xl mx-auto">
-          {reviews.map((review, index) => {
-            const isActive = index === activeIndex;
-
-            return (
+        {/* Testimonials */}
+        <section className="py-16 border-t border-slate-100 bg-slate-50">
+          <h2 className="text-2xl sm:text-3xl font-bold text-[#1F2937] text-center mb-4">
+            What our users say
+          </h2>
+          <p className="text-slate-600 text-center mb-10">
+            Trusted by property owners and inspectors.
+          </p>
+          <div className="flex justify-center items-center gap-6 max-w-5xl mx-auto">
+            {[
+              { name: 'Melbin', comment: 'Good thing' },
+              { name: 'Aisha', comment: 'Very smooth experience.' },
+              { name: 'Rahul', comment: 'Excellent support.' },
+            ].map((review, index) => (
               <div
                 key={index}
-                onClick={() => setActiveIndex(index)}
-                className={`cursor-pointer transition-all duration-500 
-                ${
-                  isActive
-                    ? "scale-100 opacity-100 z-10"
-                    : "scale-90 opacity-40"
-                }`}
+                className="w-[320px] p-8 rounded-2xl bg-white border border-slate-200 shadow-lg shrink-0"
               >
-                <div className="w-[320px] p-8 rounded-2xl bg-white border border-slate-200 shadow-lg">
-                  <div className="flex items-center gap-3 mb-6">
-                    <span className="w-12 h-12 rounded-xl bg-[#EDE9FE] flex items-center justify-center">
-                      <User className="w-6 h-6 text-[#7C3AED]" />
-                    </span>
-                    <h3 className="text-lg font-bold text-[#1F2937]">
-                      {review.name}
-                    </h3>
-                  </div>
-                  <p className="text-slate-600">{review.comment}</p>
+                <div className="flex items-center gap-3 mb-6">
+                  <span className="w-12 h-12 rounded-xl bg-[#EDE9FE] flex items-center justify-center">
+                    <User className="w-6 h-6 text-[#7C3AED]" />
+                  </span>
+                  <h3 className="text-lg font-bold text-[#1F2937]">{review.name}</h3>
                 </div>
+                <p className="text-slate-600">{review.comment}</p>
               </div>
-            );
-          })}
-        </div>
-
-        {/* Dots */}
-        <div className="flex justify-center gap-2 mt-8">
-          {reviews.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setActiveIndex(index)}
-              className={`w-3 h-3 rounded-full transition 
-              ${
-                activeIndex === index
-                  ? "bg-purple-600"
-                  : "bg-gray-300"
-              }`}
-            />
-          ))}
-        </div>
-      </>
-    );
-  })()}
-</section>
+            ))}
+          </div>
+        </section>
         {/* CTA */}
         <section className="py-20 border-t border-slate-100">
-          <div className="max-w-2xl mx-auto text-center p-10 rounded-3xl  from-[#EDE9FE] to-[#DDD6FE] border border-[#C4B5FD]">
+          <div className="max-w-2xl mx-auto text-center p-10 rounded-3xl bg-gradient-to-r from-[#EDE9FE] to-[#DDD6FE] border border-[#C4B5FD]">
             <h2 className="text-2xl sm:text-3xl font-bold text-[#1F2937] mb-3">
               Ready to get started?
             </h2>
@@ -345,7 +302,7 @@ function LandingPage() {
       {/* Footer */}
       <footer className="relative z-10 border-t border-slate-200 bg-white">
         <div className="max-w-6xl mx-auto px-6 py-12">
-          <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-8 mb-10">
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-8 mb-10">
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <span className="w-9 h-9 rounded-lg bg-[#EDE9FE] flex items-center justify-center">
@@ -370,13 +327,6 @@ function LandingPage() {
               <ul className="space-y-2 text-sm text-slate-600">
                 <li><a href="#how-it-works" className="hover:text-[#7C3AED]">How it works</a></li>
                 <li><a href="#features" className="hover:text-[#7C3AED]">Features</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold text-[#1F2937] mb-3">Legal</h4>
-              <ul className="space-y-2 text-sm text-slate-600">
-                <li><a href="#" className="hover:text-[#7C3AED]">Terms of service</a></li>
-                <li><a href="#" className="hover:text-[#7C3AED]">Privacy policy</a></li>
               </ul>
             </div>
           </div>

@@ -42,6 +42,10 @@ export const endpoint = {
   reports: {
     inspectionReports: `${BASE_URL}/reports/inspection-reports`,
     inspectionReportOne: (id) => `${BASE_URL}/reports/inspection-reports/${id}`,
+    evidence: `${BASE_URL}/reports/evidence`,
+    evidenceUpload: `${BASE_URL}/reports/evidence/upload`,
+    redFlagCategories: `${BASE_URL}/reports/red-flag-categories`,
+    redFlags: `${BASE_URL}/reports/red-flags`,
   },
 
   Package: {

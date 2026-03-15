@@ -90,9 +90,18 @@ def notify_inspector_assignment(inspector_id: UUID, job_ticket_id: UUID, propert
     notification_data = notifications_schemas.NotificationCreate(
         user_id=inspector_id,
         user_type="inspector",
-        message=f"New inspection job assigned for property: {property_address}"
+        message=f"New inspection job assigned for property: {property_address}",
     )
-    return create_notification(notification_data, db)
+    create_notification(notification_data, db)
+    try:
+        from app.notifications.whatsapp import send_whatsapp
+        from app.inspector import models as inspector_models
+        inspector = db.query(inspector_models.Inspector).filter(inspector_models.Inspector.id == inspector_id).first()
+        if inspector and inspector.phone:
+            body = f"HomeGuard: New inspection job assigned for {property_address}. Log in to view details."
+            send_whatsapp(inspector.phone, body)
+    except Exception:
+        pass
 
 # Helper function to create notification for owner when inspector is assigned
 def notify_owner_inspector_assigned(owner_id: UUID, property_address: str, inspector_name: str, db: Session):
@@ -104,11 +113,25 @@ def notify_owner_inspector_assigned(owner_id: UUID, property_address: str, inspe
     return create_notification(notification_data, db)
 
 # Helper function to create notification for owner when inspection is completed
-def notify_owner_inspection_complete(owner_id: UUID, property_address: str, db: Session):
+def notify_owner_inspection_complete(
+    owner_id: UUID,
+    property_address: str,
+    db: Session,
+    report_url: str | None = None,
+    base_url: str = "",
+):
     notification_data = notifications_schemas.NotificationCreate(
         user_id=owner_id,
         user_type="owner",
-        message=f"Inspection completed for property: {property_address}"
+        message=f"Inspection completed for property: {property_address}",
     )
-    return create_notification(notification_data, db)
+    create_notification(notification_data, db)
+    try:
+        from app.notifications.whatsapp import send_report_ready
+        from app.users import models as user_models
+        owner = db.query(user_models.Owner).filter(user_models.Owner.id == owner_id).first()
+        if owner and owner.phone and report_url:
+            send_report_ready(owner.phone, property_address, report_url, base_url)
+    except Exception:
+        pass
 

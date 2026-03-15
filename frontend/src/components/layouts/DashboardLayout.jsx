@@ -5,7 +5,6 @@ import {
   LayoutDashboard,
   Package,
   Home,
-  ClipboardCheck,
   UserCog,
   Users,
   Ticket,
@@ -25,7 +24,6 @@ const navItems = [
   { path: '/dashboard/serviceitems', label: 'Services', icon: Package },
   { path: '/dashboard/properties', label: 'Properties', icon: Home },
   { path: '/dashboard/my-jobs', label: 'My Jobs', icon: ClipboardList },
-  { path: '/dashboard/inspections', label: 'Inspections', icon: ClipboardCheck },
   { path: '/dashboard/inspector', label: 'Inspectors', icon: UserCog },
   { path: '/dashboard/owners', label: 'Owners', icon: Users },
   { path: '/dashboard/jobtickets', label: 'Job tickets', icon: Ticket },
@@ -41,9 +39,9 @@ function DashboardLayout() {
   const { user, logout } = useAuth()
 
   const roleNavMap = {
-    admin: navItems,
+    admin: navItems.filter((item) => item.path !== '/dashboard/my-jobs'),
     owner: navItems.filter((item) =>
-      ['/dashboard', '/dashboard/properties', '/dashboard/my-jobs', '/dashboard/inspections', '/dashboard/notifications', '/dashboard/complaints', '/dashboard/feedback'].includes(
+      ['/dashboard', '/dashboard/properties', '/dashboard/my-jobs', '/dashboard/notifications', '/dashboard/complaints', '/dashboard/feedback'].includes(
         item.path
       )
     ),
@@ -62,12 +60,12 @@ function DashboardLayout() {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#F8F7FC]">
-      {/* Sidebar */}
+    <div className="flex h-screen overflow-hidden bg-[#F8F7FC]">
+      {/* Sidebar - fixed height, scrolls only if nav overflows */}
       <aside
         className={`${
           sidebarOpen ? 'w-64' : 'w-20'
-        } bg-white border-r border-slate-200 flex flex-col transition-all duration-200 shrink-0`}
+        } h-full bg-white border-r border-slate-200 flex flex-col transition-all duration-200 shrink-0 overflow-hidden`}
       >
         <div className="p-4 border-b border-slate-100 flex items-center justify-between">
           <Link to="/dashboard" className="flex items-center gap-2.5 min-w-0">
@@ -122,8 +120,8 @@ function DashboardLayout() {
         </div>
       </aside>
 
-      {/* Main area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      {/* Main area - only this section scrolls */}
+      <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -134,13 +132,14 @@ function DashboardLayout() {
           </button>
           <div className="flex-1" />
           <div className="flex items-center gap-4">
-            <button
+            <Link
+              to="/dashboard/notifications"
               className="relative p-2 rounded-full text-slate-500 hover:bg-slate-100 hover:text-[#7C3AED] transition"
               aria-label="Notifications"
             >
               <Bell className="w-5 h-5" />
               <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#A78BFA]" />
-            </button>
+            </Link>
             {user && (
               <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
                 <span className="text-sm text-slate-600">
@@ -152,7 +151,7 @@ function DashboardLayout() {
           </div>
         </header>
 
-        <main className="flex-1 p-6 overflow-y-auto">
+        <main className="flex-1 min-h-0 p-6 overflow-y-auto">
           <Outlet />
         </main>
       </div>

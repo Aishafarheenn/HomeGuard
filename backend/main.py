@@ -1,9 +1,11 @@
 import logging
 import os
+from pathlib import Path
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 import uvicorn
 
 from middleware.db import init_db
@@ -35,6 +37,12 @@ def _get_cors_origins() -> list[str]:
     if os.getenv("ENV") == "production":
         return []
     return ["*"]
+
+
+UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", "uploads"))
+EVIDENCE_DIR = UPLOAD_DIR / "evidence"
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
 
 
 @asynccontextmanager
@@ -70,6 +78,9 @@ app.include_router(inspector_router)
 app.include_router(notifications_router)
 app.include_router(complaint_router)
 app.include_router(feedback_router)
+
+if UPLOAD_DIR.exists():
+    app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
 @app.get("/")
 def read_root():

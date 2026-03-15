@@ -1,7 +1,7 @@
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, status, UploadFile
 from sqlalchemy.orm import Session
 
 from app.reports import schemas as reports_schemas
@@ -14,15 +14,51 @@ router = APIRouter(prefix="/reports", tags=["reports"])
 # Evidence Routes
 @router.get("/evidence", response_model=list[reports_schemas.EvidenceResponse])
 def get_all_evidence(
+    inspection_id: Optional[UUID] = None,
     db: Session = Depends(get_db),
     current_user: CurrentUser = Depends(get_current_user),
 ):
     """
-    Admin: all evidence.
-    Other roles: currently also see all (data is not directly scoped to user here).
+    List evidence. Optional inspection_id to filter by inspection.
     """
     try:
-        return reports_services.get_all_evidence(db)
+        return reports_services.get_all_evidence(db, inspection_id=inspection_id)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@router.post(
+    "/evidence/upload",
+    response_model=reports_schemas.EvidenceResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def upload_evidence(
+    file: UploadFile = File(...),
+    inspection_id: UUID = Form(...),
+    checklist_item_id: UUID = Form(...),
+    media_type: str = Form("photo"),
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """Upload a photo or video as evidence for an inspection checklist item."""
+    if current_user.role not in {"admin", "inspector"}:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not allowed to upload evidence",
+        )
+    if media_type not in ("photo", "video"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="media_type must be 'photo' or 'video'",
+        )
+    try:
+        return reports_services.upload_evidence_file(
+            file, inspection_id, checklist_item_id, media_type, db
+        )
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
@@ -108,11 +144,30 @@ def delete_evidence(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
         )
 
+RED_FLAG_CATEGORIES = [
+    "leaks",
+    "cracks",
+    "electrical",
+    "pest",
+    "water_damage",
+    "structural",
+    "safety",
+    "other",
+]
+
+@router.get("/red-flag-categories")
+def get_red_flag_categories():
+    """Standard red-flag categories for inspections (Insight360)."""
+    return {"categories": RED_FLAG_CATEGORIES}
+
 # RedFlag Routes
 @router.get("/red-flags", response_model=list[reports_schemas.RedFlagResponse])
-def get_all_red_flags(db: Session = Depends(get_db)):
+def get_all_red_flags(
+    inspection_id: Optional[UUID] = None,
+    db: Session = Depends(get_db),
+):
     try:
-        return reports_services.get_all_red_flags(db)
+        return reports_services.get_all_red_flags(db, inspection_id=inspection_id)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
@@ -285,6 +340,31 @@ def delete_inspection_report(
                 detail="Inspection report not found",
             )
         return {"message": "Inspection report deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@router.post("/generate/{inspection_id}")
+def generate_report(
+    inspection_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """Generate HTML report for an inspection. Admin and inspectors can trigger."""
+    if current_user.role not in {"admin", "inspector"}:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not allowed to generate reports",
+        )
+    try:
+        report_url = reports_services.generate_inspection_report_html(
+            inspection_id, db, base_url=""
+        )
+        return {"report_url": report_url}
     except HTTPException:
         raise
     except Exception as e:

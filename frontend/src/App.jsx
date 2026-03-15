@@ -12,7 +12,6 @@ import Dashboard from './screens/dashboard/Dashboard'
 import ServiceItems from './screens/dashboard/ServiceItems'
 import Owners from './screens/dashboard/Owners'
 import Properties from './screens/dashboard/Properties'
-import Inspections from './screens/dashboard/Inspections'
 import JobTickets from './screens/dashboard/Jobtickets'
 import JobTicketDetail from './screens/dashboard/JobTicketDetail'
 import Inspector from './screens/dashboard/Inspector'
@@ -69,14 +68,6 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['owner']}>
                   <MyJobs />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="inspections"
-              element={
-                <ProtectedRoute allowedRoles={['admin', 'owner']}>
-                  <Inspections />
                 </ProtectedRoute>
               }
             />

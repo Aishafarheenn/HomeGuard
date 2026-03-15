@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react'
-import { ClipboardList, Loader2, User, Package, MapPin, RefreshCw, Eye, X, CheckCircle, UserPlus, Calendar, FileText } from 'lucide-react'
+import { ClipboardList, Loader2, User, Package, MapPin, RefreshCw, Eye, X, CheckCircle, UserPlus, Calendar, FileText, Image, Video, AlertTriangle } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { inspectionServices } from '../../services/requests/inspectionServices'
+import { endpoint } from '../../services/endpoints'
+import CreateScheduleModal from './CreateScheduleModal'
 
 const TAB_ALL = 'all'
 const TAB_PENDING = 'pending'
@@ -29,6 +31,7 @@ function MyJobs() {
   const [detailJob, setDetailJob] = useState(null)
   const [reportData, setReportData] = useState(null)
   const [reportLoading, setReportLoading] = useState(false)
+  const [scheduleModalOpen, setScheduleModalOpen] = useState(false)
 
   const fetchJobs = useCallback(async () => {
     if (!isOwner) return
@@ -85,7 +88,7 @@ function MyJobs() {
           ? 'bg-sky-100 text-sky-800'
           : 'bg-violet-100 text-violet-800'
     return (
-      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${cls}`}>
+      <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold ${cls}`}>
         {status}
       </span>
     )
@@ -113,14 +116,23 @@ function MyJobs() {
             View your inspection requests and their status (assignment and completion).
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => fetchJobs()}
-          disabled={loading}
-          className="inline-flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 disabled:opacity-50 shrink-0 transition"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setScheduleModalOpen(true)}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 shadow-sm shrink-0"
+          >
+            <Calendar className="w-4 h-4" /> Schedule inspection
+          </button>
+          <button
+            type="button"
+            onClick={() => fetchJobs()}
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 disabled:opacity-50 shrink-0 transition"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -129,14 +141,14 @@ function MyJobs() {
         </div>
       )}
 
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-        <div className="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-slate-50/80 to-white">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
           <div className="flex items-center gap-3 mb-4">
-            <span className="w-10 h-10 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center">
-              <ClipboardList className="w-5 h-5" />
+            <span className="w-12 h-12 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center">
+              <ClipboardList className="w-6 h-6" />
             </span>
             <div>
-              <h2 className="font-semibold text-slate-900">Your inspection jobs</h2>
+              <h2 className="font-semibold text-slate-900 text-lg">Your inspection jobs</h2>
               <p className="text-slate-500 text-sm mt-0.5">Schedules you created and their current status</p>
             </div>
           </div>
@@ -146,9 +158,9 @@ function MyJobs() {
                 key={key}
                 type="button"
                 onClick={() => setActiveTab(key)}
-                className={`px-3 py-2 rounded-xl text-sm font-medium transition ${
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
                   activeTab === key
-                    ? 'bg-violet-600 text-white shadow-sm shadow-violet-500/25'
+                    ? 'bg-violet-600 text-white'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
@@ -158,63 +170,57 @@ function MyJobs() {
           </div>
         </div>
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-12 text-slate-500">
+          <div className="py-16 flex flex-col items-center justify-center text-slate-500">
             <Loader2 className="w-10 h-10 animate-spin text-violet-500 mb-3" />
             <p className="text-sm font-medium">Loading your jobs…</p>
           </div>
         ) : jobs.length === 0 ? (
-          <div className="py-12 px-6 flex flex-col items-center justify-center text-slate-500">
-            <span className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
-              <ClipboardList className="w-8 h-8 text-slate-400" />
+          <div className="py-16 flex flex-col items-center justify-center text-slate-500">
+            <span className="w-20 h-20 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
+              <ClipboardList className="w-10 h-10 text-slate-400" />
             </span>
-            <p className="font-medium text-slate-700">No jobs yet</p>
-            <p className="text-sm mt-1">Create an inspection schedule from the Inspections page.</p>
+            <p className="font-semibold text-slate-700">No jobs yet</p>
+            <p className="text-sm mt-1 text-slate-500">Schedule an inspection using the button above.</p>
           </div>
         ) : filteredJobs.length === 0 ? (
-          <div className="py-12 px-6 text-center text-slate-500">
+          <div className="py-12 text-center text-slate-500">
             <p className="font-medium text-slate-600">No jobs in this category.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full">
               <thead>
-                <tr className="text-left text-slate-500 border-b border-slate-100 bg-slate-50/70">
-                  <th className="py-3.5 px-6 font-medium">Property</th>
-                  <th className="py-3.5 px-6 font-medium">Package</th>
-                  <th className="py-3.5 px-6 font-medium">Scheduled</th>
-                  <th className="py-3.5 px-6 font-medium">Assigned to</th>
-                  <th className="py-3.5 px-6 font-medium">Assigned on</th>
-                  <th className="py-3.5 px-6 font-medium">Job status</th>
-                  <th className="py-3.5 px-6 font-medium">Completed on</th>
-                  <th className="py-3.5 px-6 font-medium w-24">Action</th>
+                <tr className="text-left text-slate-600 text-xs font-semibold uppercase tracking-wider border-b border-slate-200 bg-slate-50">
+                  <th className="py-4 px-6">Property</th>
+                  <th className="py-4 px-6">Package</th>
+                  <th className="py-4 px-6">Scheduled</th>
+                  <th className="py-4 px-6">Assigned to</th>
+                  <th className="py-4 px-6">Assigned on</th>
+                  <th className="py-4 px-6">Job status</th>
+                  <th className="py-4 px-6">Completed on</th>
+                  <th className="py-4 px-6 w-28 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-100">
                 {filteredJobs.map((row) => (
-                  <tr key={row.schedule_id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors">
-                    <td className="py-3.5 px-6">
-                      <span className="font-medium text-slate-900 flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                  <tr key={row.schedule_id} className="hover:bg-violet-50/30 transition-colors">
+                    <td className="py-4 px-6">
+                      <span className="font-medium text-slate-900 flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
                         {row.property_address || '—'}
                       </span>
                     </td>
-                    <td className="py-3.5 px-6 text-slate-600 flex items-center gap-1.5">
-                      <Package className="w-3.5 h-3.5 text-slate-400" />
-                      {row.package_name || '—'}
-                    </td>
-                    <td className="py-3.5 px-6 text-slate-600">{formatDate(row.scheduled_date)}</td>
-                    <td className="py-3.5 px-6 text-slate-600 flex items-center gap-1.5">
-                      <User className="w-3.5 h-3.5 text-slate-400" />
-                      {row.inspector_name || 'Not assigned'}
-                    </td>
-                    <td className="py-3.5 px-6 text-slate-600">{formatDate(row.assigned_at)}</td>
-                    <td className="py-3.5 px-6">{statusBadge(row.job_ticket_status)}</td>
-                    <td className="py-3.5 px-6 text-slate-600">{formatDate(row.inspection_completed_at)}</td>
-                    <td className="py-3.5 px-6">
+                    <td className="py-4 px-6 text-slate-600">{row.package_name || '—'}</td>
+                    <td className="py-4 px-6 text-slate-600 text-sm">{formatDate(row.scheduled_date)}</td>
+                    <td className="py-4 px-6 text-slate-600">{row.inspector_name || 'Not assigned'}</td>
+                    <td className="py-4 px-6 text-slate-600 text-sm">{formatDate(row.assigned_at)}</td>
+                    <td className="py-4 px-6">{statusBadge(row.job_ticket_status)}</td>
+                    <td className="py-4 px-6 text-slate-600 text-sm">{formatDate(row.inspection_completed_at)}</td>
+                    <td className="py-4 px-6 text-right">
                       <button
                         type="button"
                         onClick={() => setDetailJob(row)}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-violet-50 text-violet-700 text-sm font-medium hover:bg-violet-100 transition"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition"
                       >
                         <Eye className="w-4 h-4" /> View
                       </button>
@@ -358,14 +364,49 @@ function MyJobs() {
                           <p className="text-sm text-slate-700 whitespace-pre-wrap">{reportData.report_notes}</p>
                         </div>
                       )}
+                      {reportData.evidence?.length > 0 && (
+                        <div>
+                          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">Evidence</p>
+                          <div className="flex flex-wrap gap-2">
+                            {reportData.evidence.map((ev) => (
+                              <a
+                                key={ev.id}
+                                href={ev.media_url?.startsWith('http') ? ev.media_url : `${endpoint.BASE_URL}${ev.media_url}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-sm text-slate-700 hover:bg-slate-50"
+                              >
+                                {ev.media_type === 'photo' ? <Image className="w-4 h-4" /> : <Video className="w-4 h-4" />}
+                                {ev.area_name ? `${ev.area_name} (${ev.media_type})` : ev.media_type}
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {reportData.red_flags?.length > 0 && (
+                        <div>
+                          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2 flex items-center gap-1">
+                            <AlertTriangle className="w-3.5 h-3.5 text-amber-600" /> Red flags
+                          </p>
+                          <ul className="space-y-2">
+                            {reportData.red_flags.map((rf) => (
+                              <li key={rf.id} className="rounded-lg border border-amber-200 bg-amber-50/80 px-3 py-2 text-sm">
+                                <span className="font-medium text-amber-800">{rf.category}</span>
+                                {rf.severity && <span className="text-amber-700 ml-2">({rf.severity})</span>}
+                                <p className="text-slate-700 mt-0.5">{rf.description}</p>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                       {reportData.report_url && (
                         <a
-                          href={reportData.report_url}
+                          href={reportData.report_url.startsWith('http') ? reportData.report_url : `${endpoint.BASE_URL}${reportData.report_url}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-sm text-violet-600 hover:underline font-medium"
                         >
-                          Open report link
+                          Open report (HTML)
                         </a>
                       )}
                     </div>
@@ -376,6 +417,15 @@ function MyJobs() {
           </div>
         </div>
       )}
+
+      <CreateScheduleModal
+        isOpen={scheduleModalOpen}
+        onClose={() => setScheduleModalOpen(false)}
+        onSuccess={() => {
+          setScheduleModalOpen(false)
+          fetchJobs()
+        }}
+      />
     </div>
   )
 }

@@ -65,11 +65,11 @@ function Inspector() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#1F2937]">Inspectors</h1>
-          <p className="text-slate-500 text-sm mt-0.5">
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Inspectors</h1>
+          <p className="text-slate-500 text-sm mt-1">
             {isAdmin
               ? 'Approve or reject inspector applications. Only approved inspectors can sign in.'
               : 'List of inspectors'}
@@ -78,90 +78,98 @@ function Inspector() {
       </div>
 
       {error && (
-        <div className="rounded-xl bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm">
-          {error}
-        </div>
+        <div className="rounded-xl bg-red-50 border border-red-100 text-red-700 px-4 py-3 text-sm">{error}</div>
       )}
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100">
-          <h2 className="font-semibold text-[#1F2937]">Inspector list</h2>
-          <p className="text-slate-500 text-sm mt-0.5">All registered inspectors and their approval status</p>
+        <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
+          <div className="flex items-center gap-3">
+            <span className="w-12 h-12 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center">
+              <UserCog className="w-6 h-6" />
+            </span>
+            <div>
+              <h2 className="font-semibold text-slate-900 text-lg">Inspector list</h2>
+              <p className="text-slate-500 text-sm mt-0.5">All registered inspectors and their approval status</p>
+            </div>
+          </div>
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-[#7C3AED]" />
+          <div className="py-16 flex flex-col items-center justify-center text-slate-500">
+            <Loader2 className="w-10 h-10 animate-spin text-violet-500 mb-3" />
+            <p className="text-sm font-medium">Loading inspectors…</p>
+          </div>
+        ) : inspectors.length === 0 ? (
+          <div className="py-16 flex flex-col items-center justify-center text-slate-500">
+            <span className="w-20 h-20 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
+              <UserCog className="w-10 h-10 text-slate-400" />
+            </span>
+            <p className="font-semibold text-slate-700">No inspectors yet</p>
+            <p className="text-sm mt-1 text-slate-500 max-w-sm text-center">
+              Inspectors register from the landing page, then appear here for approval.
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full">
               <thead>
-                <tr className="text-left text-slate-500 border-b border-slate-100 bg-slate-50/50">
-                  <th className="py-3 px-6 font-medium">Name</th>
-                  <th className="py-3 px-6 font-medium">Email</th>
-                  <th className="py-3 px-6 font-medium">Phone</th>
-                  <th className="py-3 px-6 font-medium">Status</th>
-                  {isAdmin && <th className="py-3 px-6 font-medium">Actions</th>}
+                <tr className="text-left text-slate-600 text-xs font-semibold uppercase tracking-wider border-b border-slate-200 bg-slate-50">
+                  <th className="py-4 px-6">Name</th>
+                  <th className="py-4 px-6">Email</th>
+                  <th className="py-4 px-6">Phone</th>
+                  <th className="py-4 px-6">Status</th>
+                  {isAdmin && <th className="py-4 px-6 w-44 text-right">Actions</th>}
                 </tr>
               </thead>
-              <tbody>
-                {inspectors.length === 0 ? (
-                  <tr>
-                    <td colSpan={isAdmin ? 5 : 4} className="py-8 px-6 text-center text-slate-500">
-                      No inspectors yet. Inspectors register from the landing page, then appear here for approval.
+              <tbody className="divide-y divide-slate-100">
+                {inspectors.map((row) => (
+                  <tr key={row.id} className="hover:bg-violet-50/30 transition-colors">
+                    <td className="py-4 px-6 font-medium text-slate-900">{row.full_name}</td>
+                    <td className="py-4 px-6 text-slate-600 text-sm">{row.email}</td>
+                    <td className="py-4 px-6 text-slate-600">{row.phone || '—'}</td>
+                    <td className="py-4 px-6">
+                      <span
+                        className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold capitalize ${
+                          row.status === 'approved'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : row.status === 'rejected'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-amber-100 text-amber-800'
+                        }`}
+                      >
+                        {row.status}
+                      </span>
                     </td>
-                  </tr>
-                ) : (
-                  inspectors.map((row) => (
-                    <tr key={row.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50">
-                      <td className="py-3 px-6 font-medium text-[#1F2937]">{row.full_name}</td>
-                      <td className="py-3 px-6 text-slate-600">{row.email}</td>
-                      <td className="py-3 px-6 text-slate-600">{row.phone || '—'}</td>
-                      <td className="py-3 px-6">
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                            row.status === 'approved'
-                              ? 'bg-emerald-100 text-emerald-700'
-                              : row.status === 'rejected'
-                                ? 'bg-red-100 text-red-700'
-                                : 'bg-amber-100 text-amber-700'
-                          }`}
-                        >
-                          {row.status}
-                        </span>
+                    {isAdmin && (
+                      <td className="py-4 px-6 text-right">
+                        {row.status === 'pending' && (
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => handleApprove(row.id)}
+                              disabled={!!actingId}
+                              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 transition"
+                            >
+                              {actingId === row.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <CheckCircle className="w-4 h-4" />
+                              )}
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => handleReject(row.id)}
+                              disabled={!!actingId}
+                              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-red-200 bg-red-50 text-red-700 text-sm font-medium hover:bg-red-100 disabled:opacity-50 transition"
+                            >
+                              <XCircle className="w-4 h-4" />
+                              Reject
+                            </button>
+                          </div>
+                        )}
                       </td>
-                      {isAdmin && (
-                        <td className="py-3 px-6">
-                          {row.status === 'pending' && (
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => handleApprove(row.id)}
-                                disabled={!!actingId}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 disabled:opacity-50"
-                              >
-                                {actingId === row.id ? (
-                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                ) : (
-                                  <CheckCircle className="w-3.5 h-3.5" />
-                                )}
-                                Approve
-                              </button>
-                              <button
-                                onClick={() => handleReject(row.id)}
-                                disabled={!!actingId}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-100 text-red-700 text-xs font-medium hover:bg-red-200 disabled:opacity-50"
-                              >
-                                <XCircle className="w-3.5 h-3.5" />
-                                Reject
-                              </button>
-                            </div>
-                          )}
-                        </td>
-                      )}
-                    </tr>
-                  ))
-                )}
+                    )}
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

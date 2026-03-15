@@ -8,13 +8,15 @@ import CreateJobticketModal from './CreateJobticketModal'
 function StatusBadge({ status }) {
   const s = (status ?? '').toLowerCase()
   const styles = {
-    assigned: 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300',
-    in_progress: 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300',
-    completed: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
+    pending: 'bg-amber-100 text-amber-800',
+    assigned: 'bg-violet-100 text-violet-800',
+    in_progress: 'bg-sky-100 text-sky-800',
+    completed: 'bg-emerald-100 text-emerald-800',
   }
-  const label = s === 'in_progress' ? 'In progress' : s === 'assigned' ? 'Assigned' : s === 'completed' ? 'Completed' : status ?? '—'
+  const labels = { pending: 'Pending', assigned: 'Assigned', in_progress: 'In progress', completed: 'Completed' }
+  const label = labels[s] || (status ?? '—')
   return (
-    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium capitalize ${styles[s] || 'bg-slate-100 text-slate-700'}`}>
+    <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold ${styles[s] || 'bg-slate-100 text-slate-700'}`}>
       {label}
     </span>
   )
@@ -68,7 +70,7 @@ function JobTickets() {
             type="button"
             onClick={() => fetchTickets(true)}
             disabled={loading || refreshing}
-            className="inline-flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 hover:border-slate-300 transition shrink-0 disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 transition shrink-0 disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
             Refresh
@@ -77,7 +79,7 @@ function JobTickets() {
             <button
               type="button"
               onClick={() => setCreateModalOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition shadow-sm shadow-violet-500/25 shrink-0"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 shadow-sm shrink-0"
             >
               <Plus className="w-4 h-4" /> Create ticket
             </button>
@@ -85,14 +87,14 @@ function JobTickets() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-        <div className="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-slate-50/80 to-white">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
           <div className="flex items-center gap-3">
-            <span className="w-10 h-10 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center">
-              <Ticket className="w-5 h-5" />
+            <span className="w-12 h-12 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center">
+              <Ticket className="w-6 h-6" />
             </span>
             <div>
-              <h2 className="font-semibold text-slate-900">
+              <h2 className="font-semibold text-slate-900 text-lg">
                 {isInspector ? 'Your assigned jobs' : 'All job tickets'}
               </h2>
               <p className="text-slate-500 text-sm mt-0.5">
@@ -103,25 +105,25 @@ function JobTickets() {
         </div>
 
         {loading && (
-          <div className="p-12 flex flex-col items-center justify-center text-slate-500">
-            <RefreshCw className="w-8 h-8 animate-spin text-violet-500 mb-3" />
+          <div className="py-16 flex flex-col items-center justify-center text-slate-500">
+            <RefreshCw className="w-10 h-10 animate-spin text-violet-500 mb-3" />
             <p className="text-sm font-medium">Loading job tickets…</p>
           </div>
         )}
 
         {error && !loading && (
-          <div className="p-6 rounded-xl mx-4 mt-4 bg-red-50 border border-red-100 text-red-700 text-sm">
+          <div className="mx-6 mt-4 p-4 rounded-xl bg-red-50 border border-red-100 text-red-700 text-sm">
             {error}
           </div>
         )}
 
         {!loading && !error && tickets.length === 0 && (
-          <div className="p-12 flex flex-col items-center justify-center text-slate-500">
-            <span className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
-              <Inbox className="w-8 h-8 text-slate-400" />
+          <div className="py-16 flex flex-col items-center justify-center text-slate-500">
+            <span className="w-20 h-20 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
+              <Inbox className="w-10 h-10 text-slate-400" />
             </span>
-            <p className="font-medium text-slate-700">No job tickets yet</p>
-            <p className="text-sm mt-1">
+            <p className="font-semibold text-slate-700">No job tickets yet</p>
+            <p className="text-sm mt-1 text-slate-500 max-w-sm text-center">
               {isInspector ? 'When jobs are assigned to you, they will appear here.' : 'Create a ticket to assign a schedule to an inspector.'}
             </p>
           </div>
@@ -129,26 +131,23 @@ function JobTickets() {
 
         {!loading && !error && tickets.length > 0 && (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full">
               <thead>
-                <tr className="text-left text-slate-500 border-b border-slate-100 bg-slate-50/70">
-                  <th className="py-3.5 px-6 font-medium">Property</th>
-                  {!isInspector && <th className="py-3.5 px-6 font-medium">Owner</th>}
-                  {!isInspector && <th className="py-3.5 px-6 font-medium">Inspector</th>}
-                  <th className="py-3.5 px-6 font-medium">Status</th>
-                  <th className="py-3.5 px-6 font-medium">Assigned</th>
-                  <th className="py-3.5 px-6 font-medium w-32">Action</th>
+                <tr className="text-left text-slate-600 text-xs font-semibold uppercase tracking-wider border-b border-slate-200 bg-slate-50">
+                  <th className="py-4 px-6">Property</th>
+                  {!isInspector && <th className="py-4 px-6">Owner</th>}
+                  {!isInspector && <th className="py-4 px-6">Inspector</th>}
+                  <th className="py-4 px-6">Status</th>
+                  <th className="py-4 px-6">Assigned</th>
+                  <th className="py-4 px-6 w-36 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-100">
                 {tickets.map((row) => (
-                  <tr
-                    key={row.id}
-                    className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors group"
-                  >
+                  <tr key={row.id} className="hover:bg-violet-50/30 transition-colors group">
                     <td className="py-4 px-6">
-                      <div className="flex items-center gap-2">
-                        <span className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-violet-100 group-hover:text-violet-600 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <span className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-violet-100 group-hover:text-violet-600 transition-colors shrink-0">
                           <MapPin className="w-4 h-4" />
                         </span>
                         <span className="font-medium text-slate-900">
@@ -158,8 +157,7 @@ function JobTickets() {
                     </td>
                     {!isInspector && (
                       <>
-                        <td className="py-4 px-6 text-slate-600 flex items-center gap-1.5">
-                          <User className="w-3.5 h-3.5 text-slate-400" />
+                        <td className="py-4 px-6 text-slate-600">
                           {row.schedule?.owner?.full_name || '—'}
                         </td>
                         <td className="py-4 px-6 text-slate-600">{row.inspector?.full_name || '—'}</td>
@@ -168,14 +166,13 @@ function JobTickets() {
                     <td className="py-4 px-6">
                       <StatusBadge status={row.status} />
                     </td>
-                    <td className="py-4 px-6 text-slate-500 flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                    <td className="py-4 px-6 text-slate-500 text-sm">
                       {row.assigned_at ? new Date(row.assigned_at).toLocaleDateString(undefined, { dateStyle: 'medium' }) : '—'}
                     </td>
-                    <td className="py-4 px-6">
+                    <td className="py-4 px-6 text-right">
                       <Link
                         to={`/dashboard/jobtickets/${row.id}`}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-violet-50 text-violet-700 text-sm font-medium hover:bg-violet-100 hover:text-violet-800 transition"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition"
                       >
                         View job
                         <ChevronRight className="w-4 h-4" />

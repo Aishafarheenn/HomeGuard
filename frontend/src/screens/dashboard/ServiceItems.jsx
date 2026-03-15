@@ -1,14 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react'
-import { ClipboardList, Users, FileText, ShieldCheck, Plus, ArrowRight, X, Package, Loader2 } from 'lucide-react'
+import { Plus, X, Package, Loader2 } from 'lucide-react'
 import CreateServiceitemModal from './CreateServiceitemModal'
 import { serviceItems } from '../../services/requests/ServiceItems'
-
-const staticServices = [
-  { title: 'Inspection service', description: 'Schedule and manage home safety inspections.', icon: ClipboardList },
-  { title: 'Owner management', description: 'Manage property owners and their details.', icon: Users },
-  { title: 'Reports & documents', description: 'Access inspection reports and evidence files.', icon: FileText },
-  { title: 'Security package', description: 'Complete home protection and monitoring.', icon: ShieldCheck },
-]
 
 function ServiceItems() {
   const [modalOpen, setModalOpen] = useState(false)
@@ -38,80 +31,66 @@ function ServiceItems() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Services</h1>
-          <p className="text-slate-500 text-sm mt-1">HomeGuard inspection and management services</p>
+          <p className="text-slate-500 text-sm mt-1">Inspection packages — Basic and Deep Check options</p>
         </div>
         <button
           type="button"
           onClick={() => setModalOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 transition shadow-sm shadow-violet-500/25 shrink-0"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 shadow-sm shrink-0"
         >
           <Plus className="w-4 h-4" /> Create package
         </button>
       </div>
 
-      <div>
-        <h2 className="text-lg font-semibold text-slate-900 mb-4">Overview</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {staticServices.map((item) => {
-            const Icon = item.icon
-            return (
-              <div
-                key={item.title}
-                className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm hover:shadow-md hover:border-violet-100 transition"
-              >
-                <div className="w-12 h-12 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center mb-4">
-                  <Icon className="w-6 h-6" />
-                </div>
-                <h3 className="font-semibold text-slate-900 mb-2">{item.title}</h3>
-                <p className="text-slate-500 text-sm mb-4">{item.description}</p>
-                <span className="inline-flex items-center gap-2 text-sm font-medium text-violet-600">
-                  View <ArrowRight className="w-4 h-4" />
-                </span>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-        <div className="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-slate-50/80 to-white">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
           <div className="flex items-center gap-3">
-            <span className="w-10 h-10 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center">
-              <Package className="w-5 h-5" />
+            <span className="w-12 h-12 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center">
+              <Package className="w-6 h-6" />
             </span>
             <div>
-              <h2 className="font-semibold text-slate-900">All packages</h2>
+              <h2 className="font-semibold text-slate-900 text-lg">All packages</h2>
               <p className="text-slate-500 text-sm mt-0.5">{packages.length} {packages.length === 1 ? 'package' : 'packages'}</p>
             </div>
           </div>
         </div>
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-12 text-slate-500">
+          <div className="py-16 flex flex-col items-center justify-center text-slate-500">
             <Loader2 className="w-10 h-10 animate-spin text-violet-500 mb-3" />
             <p className="text-sm font-medium">Loading packages…</p>
           </div>
+        ) : packages.length === 0 ? (
+          <div className="py-16 flex flex-col items-center justify-center text-slate-500">
+            <span className="w-20 h-20 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
+              <Package className="w-10 h-10 text-slate-400" />
+            </span>
+            <p className="font-semibold text-slate-700">No packages yet</p>
+            <p className="text-sm mt-1 text-slate-500">Create a package to offer Basic or Deep Check inspections.</p>
+          </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full">
               <thead>
-                <tr className="text-left text-slate-500 border-b border-slate-100 bg-slate-50/70">
-                  <th className="py-3.5 px-6 font-medium">Name</th>
-                  <th className="py-3.5 px-6 font-medium">Description</th>
-                  <th className="py-3.5 px-6 font-medium">Price</th>
-                  <th className="py-3.5 px-6 font-medium w-24">Actions</th>
+                <tr className="text-left text-slate-600 text-xs font-semibold uppercase tracking-wider border-b border-slate-200 bg-slate-50">
+                  <th className="py-4 px-6">Name</th>
+                  <th className="py-4 px-6">Description</th>
+                  <th className="py-4 px-6">Price</th>
+                  <th className="py-4 px-6 w-28 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-100">
                 {packages.map((row) => (
-                  <tr key={row.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors">
-                    <td className="py-3.5 px-6 font-medium text-slate-900">{row.name}</td>
-                    <td className="py-3.5 px-6 text-slate-600">{row.description}</td>
-                    <td className="py-3.5 px-6 text-slate-600">{row.price}</td>
-                    <td className="py-3.5 px-6">
+                  <tr key={row.id} className="hover:bg-violet-50/30 transition-colors">
+                    <td className="py-4 px-6 font-medium text-slate-900">{row.name}</td>
+                    <td className="py-4 px-6 text-slate-600 text-sm max-w-md">{row.description}</td>
+                    <td className="py-4 px-6">
+                      <span className="font-semibold text-violet-700">₹{Number(row.price ?? 0).toLocaleString()}</span>
+                    </td>
+                    <td className="py-4 px-6 text-right">
                       <button
                         type="button"
                         onClick={() => setViewPackage(row)}
-                        className="inline-flex items-center px-3 py-2 rounded-xl bg-violet-50 text-violet-700 text-sm font-medium hover:bg-violet-100 transition"
+                        className="inline-flex items-center px-4 py-2 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition"
                       >
                         View
                       </button>
@@ -123,8 +102,6 @@ function ServiceItems() {
           </div>
         )}
       </div>
-
-
 
       <CreateServiceitemModal
         isOpen={modalOpen}
@@ -139,8 +116,8 @@ function ServiceItems() {
             onClick={() => setViewPackage(null)}
             aria-hidden
           />
-          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200/80 overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-slate-50/80 to-white">
+          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50/50">
               <h2 className="text-lg font-semibold text-slate-900">Package details</h2>
               <button
                 type="button"
@@ -152,17 +129,17 @@ function ServiceItems() {
               </button>
             </div>
             <div className="p-6 space-y-4">
-              <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Name</span>
-                <p className="font-medium text-slate-900 mt-0.5">{viewPackage.name}</p>
+              <div className="p-4 rounded-xl bg-violet-50/50 border border-violet-100">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Name</span>
+                <p className="font-semibold text-slate-900 mt-1">{viewPackage.name}</p>
               </div>
-              <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Description</span>
-                <p className="text-slate-700 text-sm mt-0.5">{viewPackage.description || '—'}</p>
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Description</span>
+                <p className="text-slate-700 text-sm mt-1">{viewPackage.description || '—'}</p>
               </div>
-              <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Price</span>
-                <p className="font-medium text-slate-900 mt-0.5">{viewPackage.price ?? '—'}</p>
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Price</span>
+                <p className="font-semibold text-violet-700 mt-1">₹{Number(viewPackage.price ?? 0).toLocaleString()}</p>
               </div>
             </div>
             <div className="px-6 pb-6">

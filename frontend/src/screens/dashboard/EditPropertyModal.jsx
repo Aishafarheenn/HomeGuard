@@ -86,7 +86,7 @@ function EditPropertyModal({ isOpen, onClose, onSuccess, propertyId }) {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4" aria-modal="true">
       <div className="absolute inset-0 bg-slate-900/50" onClick={handleClose} aria-hidden />
       <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">

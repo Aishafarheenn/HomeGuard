@@ -26,7 +26,7 @@ class JobTickets(Base):
     __tablename__ = "job_tickets"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     schedule_id = Column(UUID(as_uuid=True), ForeignKey("inspection_schedules.id"), index=True)
-    inspector_id = Column(UUID(as_uuid=True), ForeignKey("inspector.id"), index=True)
+    inspector_id = Column(UUID(as_uuid=True), ForeignKey("inspector.id"), index=True, nullable=True)
     status = Column(String(20), nullable=False)
     assigned_at = Column(DateTime(timezone=True), server_default=func.now())
 

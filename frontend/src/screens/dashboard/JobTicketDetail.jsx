@@ -1,47 +1,111 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, Play, CheckCircle, Loader2, FileText, Save, MapPin, User, Package, Calendar, ClipboardList } from 'lucide-react'
+import { ArrowLeft, Play, CheckCircle, Loader2, FileText, Save, MapPin, User, Package, Calendar, ClipboardList, Camera, Video, Image, AlertTriangle, Plus } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { createJobticketApi } from '../../services/requests/CreateJobticket'
 import { inspectionServices, reportServices } from '../../services/requests/inspectionServices'
+import { endpoint } from '../../services/endpoints'
 
-function ChecklistRow({ item, result, onSave, saving }) {
+function ChecklistRow({ item, result, onSave, saving, evidenceForItem, onUploadEvidence, inspectionId, uploadLoading }) {
   const [status, setStatus] = useState(result?.status ?? 'pass')
   const [remark, setRemark] = useState(result?.remark ?? '')
+  const fileInputPhotoRef = React.useRef(null)
+  const fileInputVideoRef = React.useRef(null)
   useEffect(() => {
     setStatus(result?.status ?? 'pass')
     setRemark(result?.remark ?? '')
   }, [result?.status, result?.remark])
+  const baseUrl = endpoint.BASE_URL
+  const handleFile = (mediaType, e) => {
+    const file = e.target?.files?.[0]
+    if (file && inspectionId && onUploadEvidence) {
+      onUploadEvidence(file, inspectionId, item.id, mediaType)
+    }
+    e.target.value = ''
+  }
   return (
-    <div className="flex flex-wrap items-center gap-3 p-4 rounded-xl bg-slate-50/80 border border-slate-100 hover:border-slate-200 transition-colors">
-      <span className="text-sm font-medium text-slate-800 shrink-0 min-w-[6rem]">
-        {item.area_name || item.id}
-      </span>
-      <select
-        value={status}
-        onChange={(e) => setStatus(e.target.value)}
-        className="px-3 py-2 rounded-lg border border-slate-200 text-sm font-medium bg-white focus:ring-2 focus:ring-violet-500/30 focus:border-violet-400"
-      >
-        <option value="pass">Pass</option>
-        <option value="fail">Fail</option>
-        <option value="na">N/A</option>
-      </select>
-      <input
-        type="text"
-        value={remark}
-        onChange={(e) => setRemark(e.target.value)}
-        placeholder="Remark (optional)"
-        className="flex-1 min-w-[120px] px-3 py-2 rounded-lg border border-slate-200 text-sm placeholder:text-slate-400 focus:ring-2 focus:ring-violet-500/30 focus:border-violet-400"
-      />
-      <button
-        type="button"
-        onClick={() => onSave(item, status, remark)}
-        disabled={saving}
-        className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 disabled:opacity-50 transition"
-      >
-        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-        Save
-      </button>
+    <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-100 hover:border-slate-200 transition-colors space-y-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-sm font-medium text-slate-800 shrink-0 min-w-[6rem]">
+          {item.area_name || item.id}
+        </span>
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+          className="px-3 py-2 rounded-lg border border-slate-200 text-sm font-medium bg-white focus:ring-2 focus:ring-violet-500/30 focus:border-violet-400"
+        >
+          <option value="pass">Pass</option>
+          <option value="fail">Fail</option>
+          <option value="na">N/A</option>
+        </select>
+        <input
+          type="text"
+          value={remark}
+          onChange={(e) => setRemark(e.target.value)}
+          placeholder="Remark (optional)"
+          className="flex-1 min-w-[120px] px-3 py-2 rounded-lg border border-slate-200 text-sm placeholder:text-slate-400 focus:ring-2 focus:ring-violet-500/30 focus:border-violet-400"
+        />
+        <button
+          type="button"
+          onClick={() => onSave(item, status, remark)}
+          disabled={saving}
+          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 disabled:opacity-50 transition"
+        >
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          Save
+        </button>
+      </div>
+      {onUploadEvidence && inspectionId && (
+        <div className="border-t border-slate-200/80 pt-3">
+          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">Evidence (photos / videos)</p>
+          <div className="flex flex-wrap items-center gap-2">
+            {(evidenceForItem || []).map((ev) => (
+              <a
+                key={ev.id}
+                href={ev.media_url.startsWith('http') ? ev.media_url : `${baseUrl}${ev.media_url}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-white border border-slate-200 text-sm text-slate-700 hover:bg-slate-50"
+              >
+                {ev.media_type === 'photo' ? <Image className="w-4 h-4" /> : <Video className="w-4 h-4" />}
+                {ev.media_type}
+              </a>
+            ))}
+            <input
+              ref={fileInputPhotoRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => handleFile('photo', e)}
+            />
+            <input
+              ref={fileInputVideoRef}
+              type="file"
+              accept="video/*"
+              className="hidden"
+              onChange={(e) => handleFile('video', e)}
+            />
+            <button
+              type="button"
+              onClick={() => fileInputPhotoRef.current?.click()}
+              disabled={uploadLoading}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-300 disabled:opacity-50"
+            >
+              {uploadLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+              Add photo
+            </button>
+            <button
+              type="button"
+              onClick={() => fileInputVideoRef.current?.click()}
+              disabled={uploadLoading}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-300 disabled:opacity-50"
+            >
+              {uploadLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Video className="w-4 h-4" />}
+              Add video
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -64,6 +128,12 @@ function JobTicketDetail() {
   const [existingReportId, setExistingReportId] = useState(null)
   const [reportSaving, setReportSaving] = useState(false)
   const [checklistSaving, setChecklistSaving] = useState(false)
+  const [evidenceList, setEvidenceList] = useState([])
+  const [evidenceUploading, setEvidenceUploading] = useState(false)
+  const [redFlags, setRedFlags] = useState([])
+  const [redFlagCategories, setRedFlagCategories] = useState([])
+  const [redFlagSaving, setRedFlagSaving] = useState(false)
+  const [redFlagForm, setRedFlagForm] = useState({ category: '', severity: 'medium', description: '' })
 
   const fetchTicket = useCallback(async () => {
     if (!ticketId) return
@@ -112,13 +182,19 @@ function JobTicketDetail() {
       inspectionServices.getChecklistItemsByPackage(pId),
       inspectionServices.getChecklistResultsByInspection(insp.id),
       reportServices.getInspectionReports(insp.id),
-    ]).then(([items, results, reports]) => {
+      reportServices.getEvidenceByInspection(insp.id),
+      reportServices.getRedFlagsByInspection(insp.id),
+      reportServices.getRedFlagCategories(),
+    ]).then(([items, results, reports, evidence, flags, categories]) => {
       if (cancelled) return
       setChecklistItems(Array.isArray(items) ? items : [])
       setChecklistResults(Array.isArray(results) ? results : [])
       const first = Array.isArray(reports) && reports.length > 0 ? reports[0] : null
       setReportNotes(first?.report_notes ?? '')
       setExistingReportId(first?.id ?? null)
+      setEvidenceList(Array.isArray(evidence) ? evidence : [])
+      setRedFlags(Array.isArray(flags) ? flags : [])
+      setRedFlagCategories(Array.isArray(categories?.categories) ? categories.categories : (Array.isArray(categories) ? categories : []))
     }).catch(() => { if (!cancelled) setChecklistItems([]) })
     return () => { cancelled = true }
   }, [ticket?.id, ticket?.inspections, ticket?.schedule?.package_id])
@@ -136,20 +212,72 @@ function JobTicketDetail() {
   const getResultForItem = (itemId) =>
     checklistResults.find((r) => r.checklist_item_id === itemId)
 
+  const getEvidenceForItem = (itemId) =>
+    evidenceList.filter((e) => e.checklist_item_id === itemId)
+
+  const handleUploadEvidence = async (file, inspectionId, checklistItemId, mediaType) => {
+    setEvidenceUploading(true)
+    try {
+      const created = await reportServices.uploadEvidence(file, inspectionId, checklistItemId, mediaType)
+      setEvidenceList((prev) => [...prev, created])
+    } catch (err) {
+      setError(err.response?.data?.detail ?? err.message ?? 'Upload failed')
+    } finally {
+      setEvidenceUploading(false)
+    }
+  }
+
+  const handleAddRedFlag = async () => {
+    const insp = getLatestInspection()
+    if (!insp || !redFlagForm.category?.trim() || !redFlagForm.description?.trim()) return
+    setRedFlagSaving(true)
+    try {
+      const created = await reportServices.createRedFlag({
+        inspection_id: insp.id,
+        category: redFlagForm.category.trim(),
+        severity: redFlagForm.severity || 'medium',
+        description: redFlagForm.description.trim(),
+      })
+      setRedFlags((prev) => [...prev, created])
+      setRedFlagForm({ category: '', severity: 'medium', description: '' })
+    } catch (err) {
+      setError(err.response?.data?.detail ?? err.message ?? 'Failed to add red flag')
+    } finally {
+      setRedFlagSaving(false)
+    }
+  }
+
   const handleStart = async () => {
     setStarting(true)
     setError(null)
     try {
       const now = new Date().toISOString()
-      await inspectionServices.createInspection({
+      const payload = {
         job_ticket_id: ticket.id,
         start_time: now,
         end_time: now,
         overall_status: 'in_progress',
-      })
+      }
+      if (isInspector) {
+        const position = await new Promise((resolve, reject) => {
+          if (!navigator.geolocation) {
+            reject(new Error('Location is not supported by your browser.'))
+            return
+          }
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 15000,
+            maximumAge: 0,
+          })
+        })
+        payload.latitude = position.coords.latitude
+        payload.longitude = position.coords.longitude
+      }
+      await inspectionServices.createInspection(payload)
       await fetchTicket()
     } catch (err) {
-      setError(err.response?.data?.detail ?? err.message ?? 'Failed to start job')
+      const msg = err.response?.data?.detail ?? err.message ?? 'Failed to start job'
+      setError(Array.isArray(msg) ? msg.join(' ') : msg)
     } finally {
       setStarting(false)
     }
@@ -368,7 +496,7 @@ function JobTicketDetail() {
 
               <div>
                 <p className="text-sm font-medium text-slate-700 mb-3">Checklist</p>
-                <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+                <div className="space-y-3 max-h-[28rem] overflow-y-auto pr-1">
                   {checklistItems.map((item) => (
                     <ChecklistRow
                       key={item.id}
@@ -376,6 +504,10 @@ function JobTicketDetail() {
                       result={getResultForItem(item.id)}
                       onSave={handleSaveChecklistItem}
                       saving={checklistSaving}
+                      evidenceForItem={getEvidenceForItem(item.id)}
+                      onUploadEvidence={handleUploadEvidence}
+                      inspectionId={inspection?.id}
+                      uploadLoading={evidenceUploading}
                     />
                   ))}
                   {checklistItems.length === 0 && (
@@ -404,6 +536,68 @@ function JobTicketDetail() {
                   {reportSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                   Save notes
                 </button>
+              </div>
+
+              <div className="p-4 rounded-xl border border-amber-200 bg-amber-50/50">
+                <p className="text-sm font-medium text-slate-700 mb-3 flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-600" /> Red flags
+                </p>
+                <ul className="space-y-2 mb-4">
+                  {redFlags.map((rf) => (
+                    <li key={rf.id} className="rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm">
+                      <span className="font-medium text-amber-800">{rf.category}</span>
+                      {rf.severity && <span className="text-amber-700 ml-2">({rf.severity})</span>}
+                      <p className="text-slate-700 mt-0.5">{rf.description}</p>
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex flex-wrap gap-3 items-end">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-500 mb-1">Category</label>
+                    <select
+                      value={redFlagForm.category}
+                      onChange={(e) => setRedFlagForm((p) => ({ ...p, category: e.target.value }))}
+                      className="px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white focus:ring-2 focus:ring-violet-500/30"
+                    >
+                      <option value="">Select category</option>
+                      {redFlagCategories.map((c) => (
+                        <option key={c} value={c}>{c.replace(/_/g, ' ')}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-500 mb-1">Severity</label>
+                    <select
+                      value={redFlagForm.severity}
+                      onChange={(e) => setRedFlagForm((p) => ({ ...p, severity: e.target.value }))}
+                      className="px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white focus:ring-2 focus:ring-violet-500/30"
+                    >
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                      <option value="critical">Critical</option>
+                    </select>
+                  </div>
+                  <div className="flex-1 min-w-[180px]">
+                    <label className="block text-xs font-medium text-slate-500 mb-1">Description</label>
+                    <input
+                      type="text"
+                      value={redFlagForm.description}
+                      onChange={(e) => setRedFlagForm((p) => ({ ...p, description: e.target.value }))}
+                      placeholder="e.g. Water stain on ceiling"
+                      className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white focus:ring-2 focus:ring-violet-500/30"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddRedFlag}
+                    disabled={redFlagSaving || !redFlagForm.category?.trim() || !redFlagForm.description?.trim()}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-600 text-white text-sm font-medium hover:bg-amber-700 disabled:opacity-50"
+                  >
+                    {redFlagSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                    Add red flag
+                  </button>
+                </div>
               </div>
 
               <div className="pt-4 flex flex-wrap items-center gap-4">

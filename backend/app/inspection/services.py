@@ -1,5 +1,7 @@
+import os
 from uuid import UUID
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date, timedelta
+from math import radians, sin, cos, sqrt, atan2
 
 from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -7,6 +9,20 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.inspection import models as inspection_models
 from app.inspection import schemas as inspection_schemas
+
+# Max distance (meters) from property for inspector to start inspection (GeoShield).
+GEO_MAX_RADIUS_METERS = 150
+
+
+def _haversine_meters(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Return distance in meters between two WGS84 points."""
+    R = 6_371_000  # Earth radius in meters
+    phi1, phi2 = radians(lat1), radians(lat2)
+    dphi = radians(lat2 - lat1)
+    dlambda = radians(lon2 - lon1)
+    a = sin(dphi / 2) ** 2 + cos(phi1) * cos(phi2) * sin(dlambda / 2) ** 2
+    c = 2 * atan2(sqrt(a), sqrt(1 - a))
+    return R * c
 
 # InspectionPackage Services
 def get_all_packages(db: Session):
@@ -177,6 +193,35 @@ def get_owner_job_report(schedule_id: UUID, owner_id: UUID, db: Session):
         )
         for r in results
     ]
+    evidence_rows = (
+        db.query(reports_models.Evidence)
+        .options(selectinload(reports_models.Evidence.checklist))
+        .filter(reports_models.Evidence.inspection_id == inspection.id)
+        .all()
+    )
+    evidence_items = [
+        inspection_schemas.OwnerJobReportEvidenceItem(
+            id=e.id,
+            media_type=e.media_type,
+            media_url=e.media_url,
+            area_name=e.checklist.area_name if e.checklist else None,
+        )
+        for e in evidence_rows
+    ]
+    red_flag_rows = (
+        db.query(reports_models.RedFlag)
+        .filter(reports_models.RedFlag.inspection_id == inspection.id)
+        .all()
+    )
+    red_flag_items = [
+        inspection_schemas.OwnerJobReportRedFlagItem(
+            id=rf.id,
+            category=rf.category,
+            severity=rf.severity,
+            description=rf.description,
+        )
+        for rf in red_flag_rows
+    ]
     return inspection_schemas.OwnerJobReportResponse(
         inspection_id=inspection.id,
         start_time=inspection.start_time,
@@ -185,6 +230,8 @@ def get_owner_job_report(schedule_id: UUID, owner_id: UUID, db: Session):
         checklist_results=checklist_items,
         report_notes=report_row.report_notes if report_row else None,
         report_url=report_row.report_url if report_row else None,
+        evidence=evidence_items,
+        red_flags=red_flag_items,
     )
 
 def get_schedule_by_id(schedule_id: UUID, db: Session):
@@ -202,6 +249,13 @@ def create_schedule(schedule_data: inspection_schemas.InspectionScheduleCreate, 
     try:
         new_schedule = inspection_models.InspectionSchedule(**schedule_data.model_dump())
         db.add(new_schedule)
+        db.flush()
+        pending_ticket = inspection_models.JobTickets(
+            schedule_id=new_schedule.id,
+            inspector_id=None,
+            status="pending",
+        )
+        db.add(pending_ticket)
         db.commit()
         db.refresh(new_schedule)
         return new_schedule
@@ -269,39 +323,58 @@ def get_jobticket_by_id(job_ticket_id: UUID, db: Session):
 
 def create_jobticket(ticket_data: inspection_schemas.JobTicketCreate, db: Session):
     try:
-        new_ticket = inspection_models.JobTickets(**ticket_data.model_dump())
-        db.add(new_ticket)
-        db.commit()
-        db.refresh(new_ticket)
-        # Notify inspector of assignment
-        schedule = (
-            db.query(inspection_models.InspectionSchedule)
-            .options(selectinload(inspection_models.InspectionSchedule.property))
-            .filter(inspection_models.InspectionSchedule.id == new_ticket.schedule_id)
+        schedule_id = ticket_data.schedule_id
+        inspector_id = getattr(ticket_data, "inspector_id", None)
+        existing_pending = (
+            db.query(inspection_models.JobTickets)
+            .filter(
+                inspection_models.JobTickets.schedule_id == schedule_id,
+                inspection_models.JobTickets.inspector_id.is_(None),
+            )
             .first()
         )
-        if schedule and schedule.property:
-            from app.notifications import services as notification_services
-            notification_services.notify_inspector_assignment(
-                new_ticket.inspector_id,
-                new_ticket.id,
-                schedule.property.address or "Property",
-                db,
-            )
-            # Notify owner that an inspector has been assigned
-            from app.inspector import models as inspector_models
-            inspector = (
-                db.query(inspector_models.Inspector)
-                .filter(inspector_models.Inspector.id == new_ticket.inspector_id)
+        if existing_pending and inspector_id:
+            existing_pending.inspector_id = inspector_id
+            existing_pending.status = ticket_data.status if getattr(ticket_data, "status", None) else "assigned"
+            db.commit()
+            db.refresh(existing_pending)
+            new_ticket = existing_pending
+        else:
+            payload = ticket_data.model_dump()
+            if inspector_id is None:
+                payload["status"] = payload.get("status") or "pending"
+            new_ticket = inspection_models.JobTickets(**payload)
+            db.add(new_ticket)
+            db.commit()
+            db.refresh(new_ticket)
+        if new_ticket.inspector_id and new_ticket.status and (new_ticket.status or "").lower() != "pending":
+            schedule = (
+                db.query(inspection_models.InspectionSchedule)
+                .options(selectinload(inspection_models.InspectionSchedule.property))
+                .filter(inspection_models.InspectionSchedule.id == new_ticket.schedule_id)
                 .first()
             )
-            inspector_name = inspector.full_name if inspector else "Inspector"
-            notification_services.notify_owner_inspector_assigned(
-                schedule.owner_id,
-                schedule.property.address or "Property",
-                inspector_name,
-                db,
-            )
+            if schedule and schedule.property:
+                from app.notifications import services as notification_services
+                notification_services.notify_inspector_assignment(
+                    new_ticket.inspector_id,
+                    new_ticket.id,
+                    schedule.property.address or "Property",
+                    db,
+                )
+                from app.inspector import models as inspector_models
+                inspector = (
+                    db.query(inspector_models.Inspector)
+                    .filter(inspector_models.Inspector.id == new_ticket.inspector_id)
+                    .first()
+                )
+                inspector_name = inspector.full_name if inspector else "Inspector"
+                notification_services.notify_owner_inspector_assigned(
+                    schedule.owner_id,
+                    schedule.property.address or "Property",
+                    inspector_name,
+                    db,
+                )
         return new_ticket
     except IntegrityError:
         db.rollback()
@@ -343,8 +416,49 @@ def get_inspection_by_id(inspection_id: UUID, db: Session):
             detail=f"Database error: {str(e)}",
         )
 
+def _next_recurring_date(scheduled_date: date, frequency: str) -> date:
+    """Return next occurrence date for weekly/monthly/yearly."""
+    if frequency == "weekly":
+        return scheduled_date + timedelta(days=7)
+    if frequency == "monthly":
+        if scheduled_date.month == 12:
+            return scheduled_date.replace(year=scheduled_date.year + 1, month=1)
+        return scheduled_date.replace(month=scheduled_date.month + 1)
+    if frequency == "yearly":
+        return scheduled_date.replace(year=scheduled_date.year + 1)
+    return scheduled_date
+
+
+def _create_next_recurring_schedule(job_ticket, db: Session) -> None:
+    """If schedule has recurring frequency, create next schedule and pending job ticket."""
+    if not job_ticket or not job_ticket.schedule:
+        return
+    schedule = job_ticket.schedule
+    freq = (schedule.frequency or "").lower()
+    if freq not in ("weekly", "monthly", "yearly"):
+        return
+    next_date = _next_recurring_date(schedule.scheduled_date, freq)
+    new_schedule = inspection_models.InspectionSchedule(
+        owner_id=schedule.owner_id,
+        property_id=schedule.property_id,
+        package_id=schedule.package_id,
+        scheduled_date=next_date,
+        frequency=schedule.frequency,
+        status="scheduled",
+    )
+    db.add(new_schedule)
+    db.flush()
+    pending_ticket = inspection_models.JobTickets(
+        schedule_id=new_schedule.id,
+        inspector_id=None,
+        status="pending",
+    )
+    db.add(pending_ticket)
+    db.commit()
+
+
 def _notify_owner_if_completed(inspection, db: Session):
-    """If inspection overall_status is completed, notify owner."""
+    """If inspection overall_status is completed, notify owner (in-app + WhatsApp) and create next recurring if applicable."""
     if not inspection or (inspection.overall_status or "").lower() != "completed":
         return
     job_ticket = (
@@ -360,13 +474,65 @@ def _notify_owner_if_completed(inspection, db: Session):
         return
     owner_id = job_ticket.schedule.owner_id
     property_address = (job_ticket.schedule.property and job_ticket.schedule.property.address) or "Property"
+    report_url = None
+    base_url = os.getenv("BASE_URL", "").rstrip("/")
+    try:
+        from app.reports import models as reports_models
+        report_row = (
+            db.query(reports_models.InspectionReport)
+            .filter(reports_models.InspectionReport.inspection_id == inspection.id)
+            .first()
+        )
+        if report_row and report_row.report_url:
+            report_url = report_row.report_url
+    except Exception:
+        pass
     from app.notifications import services as notification_services
-    notification_services.notify_owner_inspection_complete(owner_id, property_address, db)
+    notification_services.notify_owner_inspection_complete(
+        owner_id, property_address, db, report_url=report_url, base_url=base_url
+    )
+    _create_next_recurring_schedule(job_ticket, db)
 
 
 def create_inspection(inspection_data: inspection_schemas.InspectionCreate, db: Session):
     try:
-        new_inspection = inspection_models.Inspection(**inspection_data.model_dump())
+        lat = getattr(inspection_data, "latitude", None)
+        lon = getattr(inspection_data, "longitude", None)
+        payload = inspection_data.model_dump(exclude={"latitude", "longitude"})
+
+        # GeoShield: if location provided, verify inspector is within radius of property before allowing start
+        if lat is not None and lon is not None:
+            job_ticket = (
+                db.query(inspection_models.JobTickets)
+                .options(
+                    selectinload(inspection_models.JobTickets.schedule).selectinload(
+                        inspection_models.InspectionSchedule.property
+                    ),
+                )
+                .filter(inspection_models.JobTickets.id == inspection_data.job_ticket_id)
+                .first()
+            )
+            if not job_ticket or not job_ticket.schedule or not job_ticket.schedule.property:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Job ticket or property not found",
+                )
+            prop = job_ticket.schedule.property
+            if prop.latitude is not None and prop.longitude is not None:
+                distance_m = _haversine_meters(
+                    prop.latitude, prop.longitude, lat, lon
+                )
+                if distance_m > GEO_MAX_RADIUS_METERS:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail=f"You must be within {GEO_MAX_RADIUS_METERS}m of the property to start this inspection. Current distance: {distance_m:.0f}m.",
+                    )
+            else:
+                distance_m = 0.0
+        else:
+            distance_m = None
+
+        new_inspection = inspection_models.Inspection(**payload)
         db.add(new_inspection)
         db.flush()
         job_ticket = (
@@ -376,10 +542,24 @@ def create_inspection(inspection_data: inspection_schemas.InspectionCreate, db: 
         )
         if job_ticket and (job_ticket.status or "").lower() not in ("in_progress", "completed"):
             job_ticket.status = "in_progress"
+        # Record geo verification when location was provided
+        if lat is not None and lon is not None and new_inspection.id:
+            geo = inspection_models.GeoVerification(
+                inspection_id=new_inspection.id,
+                latitude=lat,
+                longitude=lon,
+                distance_from_property=distance_m if distance_m is not None else 0.0,
+                verified=True,
+            )
+            db.add(geo)
         db.commit()
         db.refresh(new_inspection)
+
         _notify_owner_if_completed(new_inspection, db)
         return new_inspection
+    except HTTPException:
+        db.rollback()
+        raise
     except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid foreign key or duplicate data")
@@ -421,6 +601,12 @@ def update_inspection(inspection_id: UUID, inspection_data: inspection_schemas.I
                 job_ticket.status = "completed"
         db.commit()
         db.refresh(inspection)
+        if new_status == "completed":
+            try:
+                from app.reports import services as reports_services
+                reports_services.generate_inspection_report_html(inspection_id, db, base_url="")
+            except Exception:
+                pass
         _notify_owner_if_completed(inspection, db)
         return inspection
     except HTTPException:

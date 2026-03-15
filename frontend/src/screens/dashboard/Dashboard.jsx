@@ -13,6 +13,7 @@ import {
   CheckCircle,
   BellRing,
   MessageSquare,
+  Activity,
 } from 'lucide-react'
 
 import { useAuth } from '../../context/AuthContext'
@@ -28,6 +29,13 @@ const initialStats = [
   { key: 'tickets', label: 'Job tickets', value: 0, icon: Ticket, color: 'bg-amber-100 text-amber-600' },
 ]
 
+const adminCommandDeskStats = [
+  { key: 'pending', label: 'Pending assignment', value: 0, icon: Clock, color: 'bg-amber-100 text-amber-600' },
+  { key: 'assigned', label: 'Assigned', value: 0, icon: Ticket, color: 'bg-violet-100 text-violet-600' },
+  { key: 'in_progress', label: 'In progress', value: 0, icon: ClipboardCheck, color: 'bg-sky-100 text-sky-600' },
+  { key: 'completed', label: 'Completed', value: 0, icon: CheckCircle, color: 'bg-emerald-100 text-emerald-600' },
+]
+
 const ownerStatsKeys = [
   { key: 'properties', label: 'My properties', value: 0, icon: Home, color: 'bg-violet-100 text-violet-600' },
   { key: 'jobs', label: 'My jobs', value: 0, icon: ClipboardList, color: 'bg-sky-100 text-sky-600' },
@@ -37,13 +45,13 @@ const ownerStatsKeys = [
 ]
 
 const quickActions = [
-  { label: 'Schedule inspection', to: '/dashboard/inspections', icon: Calendar },
-  { label: 'Add property', to: '/dashboard/properties', icon: Home },
+  { label: 'Job tickets', to: '/dashboard/jobtickets', icon: Ticket },
+  { label: 'Properties', to: '/dashboard/properties', icon: Home },
   { label: 'Create job ticket', to: '/dashboard/jobtickets', icon: Ticket },
 ]
 
 const ownerQuickActions = [
-  { label: 'Schedule inspection', to: '/dashboard/inspections', icon: Calendar },
+  { label: 'Schedule inspection', to: '/dashboard/my-jobs', icon: Calendar },
   { label: 'Add property', to: '/dashboard/properties', icon: Home },
   { label: 'My Jobs', to: '/dashboard/my-jobs', icon: ClipboardList },
 ]
@@ -84,6 +92,8 @@ function Dashboard() {
   const [recentTickets, setRecentTickets] = useState([])
   const [recentJobUpdates, setRecentJobUpdates] = useState([])
   const [recentInspectorTickets, setRecentInspectorTickets] = useState([])
+  const [adminCommandDeskCounts, setAdminCommandDeskCounts] = useState(adminCommandDeskStats)
+  const [ongoingInspections, setOngoingInspections] = useState([])
 
   useEffect(() => {
     const loadStats = async () => {
@@ -168,13 +178,35 @@ function Dashboard() {
         })
         setStats(nextStats)
 
-        const tickets = ticketsRes.data.slice(0, 5).map((t) => ({
+        const tickets = ticketsRes.data
+        const pending = tickets.filter((t) => (t.status || '').toLowerCase() === 'pending').length
+        const assigned = tickets.filter((t) => (t.status || '').toLowerCase() === 'assigned').length
+        const inProgress = tickets.filter((t) => (t.status || '').toLowerCase() === 'in_progress').length
+        const completed = tickets.filter((t) => (t.status || '').toLowerCase() === 'completed').length
+        setAdminCommandDeskCounts([
+          { ...adminCommandDeskStats[0], value: pending },
+          { ...adminCommandDeskStats[1], value: assigned },
+          { ...adminCommandDeskStats[2], value: inProgress },
+          { ...adminCommandDeskStats[3], value: completed },
+        ])
+        const ongoing = tickets
+          .filter((t) => (t.status || '').toLowerCase() === 'in_progress')
+          .slice(0, 10)
+          .map((t) => ({
+            id: t.id,
+            property: t.schedule?.property?.address || '—',
+            inspector: t.inspector?.full_name || '—',
+            started: t.inspections?.[0]?.start_time
+              ? new Date(t.inspections[0].start_time).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })
+              : '—',
+          }))
+        setOngoingInspections(ongoing)
+        setRecentTickets(tickets.slice(0, 5).map((t) => ({
           id: t.id,
           property: t.schedule?.property?.address || '—',
           status: (t.status || '').toLowerCase(),
           date: t.assigned_at ? new Date(t.assigned_at).toLocaleDateString(undefined, { dateStyle: 'medium' }) : '—',
-        }))
-        setRecentTickets(tickets)
+        })))
       } catch (err) {
         console.error(err)
       }
@@ -198,6 +230,69 @@ function Dashboard() {
               : 'Overview of inspection and property management'}
         </p>
       </div>
+
+      {!isOwner && !isInspector && (
+        <div className="rounded-2xl border border-slate-200/80 bg-gradient-to-br from-slate-50 to-white p-5">
+          <div className="flex items-center gap-2 text-slate-700 mb-3">
+            <Activity className="w-5 h-5 text-violet-600" />
+            <h2 className="font-semibold">Command desk</h2>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+            {adminCommandDeskCounts.map((item) => {
+              const Icon = item.icon
+              return (
+                <div key={item.key} className="bg-white rounded-xl border border-slate-100 p-4">
+                  <div className={`w-9 h-9 rounded-lg ${item.color} flex items-center justify-center mb-2`}>
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <p className="text-slate-500 text-xs font-medium">{item.label}</p>
+                  <p className="text-xl font-bold text-slate-900">{item.value}</p>
+                </div>
+              )
+            })}
+          </div>
+          {ongoingInspections.length > 0 && (
+            <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
+              <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                <span className="font-medium text-slate-800">Ongoing inspections</span>
+                <Link
+                  to="/dashboard/jobtickets"
+                  className="text-sm text-violet-600 hover:underline flex items-center gap-1"
+                >
+                  View all <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-slate-500 border-b border-slate-100 bg-slate-50/70">
+                    <th className="py-2.5 px-4 font-medium">Property</th>
+                    <th className="py-2.5 px-4 font-medium">Inspector</th>
+                    <th className="py-2.5 px-4 font-medium">Started</th>
+                    <th className="py-2.5 px-4 font-medium w-20">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ongoingInspections.map((row) => (
+                    <tr key={row.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50">
+                      <td className="py-2.5 px-4 font-medium text-slate-900">{row.property}</td>
+                      <td className="py-2.5 px-4 text-slate-600">{row.inspector}</td>
+                      <td className="py-2.5 px-4 text-slate-600">{row.started}</td>
+                      <td className="py-2.5 px-4">
+                        <Link
+                          to={`/dashboard/jobtickets/${row.id}`}
+                          className="text-violet-600 font-medium hover:underline text-xs"
+                        >
+                          View
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
 
       <div
         className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${
