@@ -1,9 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react'
-import { ClipboardList, Loader2, User, Package, MapPin, RefreshCw, Eye, X, CheckCircle, UserPlus, Calendar, FileText, Image, Video, AlertTriangle } from 'lucide-react'
+import { ClipboardList, Loader2, MapPin, RefreshCw, Eye, X, CheckCircle, UserPlus, Calendar, FileText, Image, Video, AlertTriangle, Star, CreditCard } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { inspectionServices } from '../../services/requests/inspectionServices'
+import { feedbackService } from '../../services/requests/feedbackService'
 import { endpoint } from '../../services/endpoints'
 import CreateScheduleModal from './CreateScheduleModal'
+import { useNavigate } from 'react-router-dom'
 
 const TAB_ALL = 'all'
 const TAB_PENDING = 'pending'
@@ -24,6 +26,7 @@ function getJobStage(row) {
 function MyJobs() {
   const { user } = useAuth()
   const isOwner = user?.role === 'owner'
+  const navigate = useNavigate()
   const [jobs, setJobs] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -32,6 +35,14 @@ function MyJobs() {
   const [reportData, setReportData] = useState(null)
   const [reportLoading, setReportLoading] = useState(false)
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false)
+  const [reviewJob, setReviewJob] = useState(null)
+  const [reviewRating, setReviewRating] = useState(5)
+  const [reviewComment, setReviewComment] = useState('')
+  const [reviewSubmitting, setReviewSubmitting] = useState(false)
+  const [reviewError, setReviewError] = useState('')
+  const [pkgDetail, setPkgDetail] = useState(null)
+  const [pkgChecklist, setPkgChecklist] = useState([])
+  const [pkgLoading, setPkgLoading] = useState(false)
 
   const fetchJobs = useCallback(async () => {
     if (!isOwner) return
@@ -52,6 +63,42 @@ function MyJobs() {
   useEffect(() => {
     fetchJobs()
   }, [fetchJobs])
+
+  const detailPackageId = detailJob?.package_id
+  useEffect(() => {
+    if (!detailPackageId) {
+      setPkgDetail(null)
+      setPkgChecklist([])
+      return
+    }
+    let cancelled = false
+    async function loadPkg() {
+      setPkgLoading(true)
+      setPkgDetail(null)
+      setPkgChecklist([])
+      try {
+        const [p, items] = await Promise.all([
+          inspectionServices.getPackage(detailPackageId),
+          inspectionServices.getChecklistItemsByPackage(detailPackageId),
+        ])
+        if (!cancelled) {
+          setPkgDetail(p)
+          setPkgChecklist(Array.isArray(items) ? items : [])
+        }
+      } catch {
+        if (!cancelled) {
+          setPkgDetail(null)
+          setPkgChecklist([])
+        }
+      } finally {
+        if (!cancelled) setPkgLoading(false)
+      }
+    }
+    loadPkg()
+    return () => {
+      cancelled = true
+    }
+  }, [detailPackageId])
 
   if (!isOwner) {
     return (
@@ -94,6 +141,43 @@ function MyJobs() {
     )
   }
 
+  const paymentBadge = (status) => {
+    const s = (status ?? '').toLowerCase()
+    if (!s || s === 'unpaid') {
+      return (
+        <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+          Unpaid
+        </span>
+      )
+    }
+    if (s === 'pending') {
+      return (
+        <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+          Pending verification
+        </span>
+      )
+    }
+    if (s === 'verified') {
+      return (
+        <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+          Verified
+        </span>
+      )
+    }
+    if (s === 'rejected') {
+      return (
+        <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-red-100 text-red-800">
+          Rejected
+        </span>
+      )
+    }
+    return (
+      <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+        {status ?? '—'}
+      </span>
+    )
+  }
+
   const tabs = [
     { key: TAB_ALL, label: 'All' },
     { key: TAB_PENDING, label: 'Pending' },
@@ -106,6 +190,39 @@ function MyJobs() {
     if (activeTab === TAB_ALL) return true
     return getJobStage(row) === activeTab
   })
+
+  const canRateInspector = (row) => {
+    const completed = (row.inspection_status || '').toLowerCase() === 'completed' || !!row.inspection_completed_at
+    return (
+      completed &&
+      row.inspection_id &&
+      row.inspector_id &&
+      !row.has_owner_review
+    )
+  }
+
+  const submitInspectionReview = async (e) => {
+    e.preventDefault()
+    if (!reviewJob?.inspection_id || !reviewComment.trim()) return
+    setReviewSubmitting(true)
+    setReviewError('')
+    try {
+      await feedbackService.createInspectionReview({
+        inspection_id: reviewJob.inspection_id,
+        rating: reviewRating,
+        comment: reviewComment.trim(),
+      })
+      setReviewJob(null)
+      setReviewComment('')
+      setReviewRating(5)
+      await fetchJobs()
+    } catch (err) {
+      const detail = err.response?.data?.detail ?? err.message ?? 'Failed to submit review'
+      setReviewError(Array.isArray(detail) ? detail.join(' ') : String(detail))
+    } finally {
+      setReviewSubmitting(false)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -197,8 +314,9 @@ function MyJobs() {
                   <th className="py-4 px-6">Assigned to</th>
                   <th className="py-4 px-6">Assigned on</th>
                   <th className="py-4 px-6">Job status</th>
+                  <th className="py-4 px-6">Payment</th>
                   <th className="py-4 px-6">Completed on</th>
-                  <th className="py-4 px-6 w-28 text-right">Action</th>
+                  <th className="py-4 px-6 w-44 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -215,15 +333,46 @@ function MyJobs() {
                     <td className="py-4 px-6 text-slate-600">{row.inspector_name || 'Not assigned'}</td>
                     <td className="py-4 px-6 text-slate-600 text-sm">{formatDate(row.assigned_at)}</td>
                     <td className="py-4 px-6">{statusBadge(row.job_ticket_status)}</td>
+                    <td className="py-4 px-6">{paymentBadge(row.payment_status)}</td>
                     <td className="py-4 px-6 text-slate-600 text-sm">{formatDate(row.inspection_completed_at)}</td>
                     <td className="py-4 px-6 text-right">
-                      <button
-                        type="button"
-                        onClick={() => setDetailJob(row)}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition"
-                      >
-                        <Eye className="w-4 h-4" /> View
-                      </button>
+                      <div className="flex flex-col items-end gap-2">
+                        <div className="flex items-center gap-2 flex-wrap justify-end">
+                          {row.payment_status !== 'verified' && (
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/dashboard/payments?schedule_id=${row.schedule_id}`)}
+                              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-50 text-violet-700 text-sm font-medium border border-violet-200 hover:bg-violet-100 transition"
+                            >
+                              <CreditCard className="w-4 h-4" /> Pay now
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setDetailJob(row)}
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition"
+                          >
+                            <Eye className="w-4 h-4" /> View
+                          </button>
+                          {canRateInspector(row) && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setReviewJob(row)
+                                setReviewRating(5)
+                                setReviewComment('')
+                                setReviewError('')
+                              }}
+                              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 text-sm font-medium hover:bg-amber-100 transition"
+                            >
+                              <Star className="w-4 h-4" /> Rate inspector
+                            </button>
+                          )}
+                        </div>
+                        {row.has_owner_review && (
+                          <span className="text-xs text-emerald-600 font-medium">Review submitted</span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -233,8 +382,83 @@ function MyJobs() {
         )}
       </div>
 
+      {reviewJob && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4" aria-modal="true">
+          <div className="absolute inset-0 bg-slate-900/50" onClick={() => !reviewSubmitting && setReviewJob(null)} aria-hidden />
+          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-slate-900">Rate your inspector</h2>
+              <button
+                type="button"
+                onClick={() => setReviewJob(null)}
+                disabled={reviewSubmitting}
+                className="p-2 rounded-xl text-slate-400 hover:bg-slate-100"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-sm text-slate-600 mb-4">
+              {reviewJob.property_address} — {reviewJob.inspector_name}
+            </p>
+            {reviewError && (
+              <div className="mb-4 rounded-xl bg-red-50 border border-red-100 text-red-700 px-4 py-3 text-sm">{reviewError}</div>
+            )}
+            <form onSubmit={submitInspectionReview} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Rating</label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => setReviewRating(n)}
+                      className={`p-2 rounded-lg border transition ${
+                        reviewRating >= n ? 'border-amber-400 bg-amber-50 text-amber-600' : 'border-slate-200 text-slate-400'
+                      }`}
+                      aria-label={`${n} stars`}
+                    >
+                      <Star className={`w-6 h-6 ${reviewRating >= n ? 'fill-current' : ''}`} />
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-slate-500 mt-1">{reviewRating} out of 5</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Your comments</label>
+                <textarea
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  rows={4}
+                  required
+                  placeholder="How was the inspection experience?"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+                />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setReviewJob(null)}
+                  disabled={reviewSubmitting}
+                  className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-700 font-medium hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={reviewSubmitting || !reviewComment.trim()}
+                  className="flex-1 py-3 rounded-xl bg-violet-600 text-white font-semibold hover:bg-violet-700 disabled:opacity-50"
+                >
+                  {reviewSubmitting ? 'Submitting…' : 'Submit review'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {detailJob && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/50" onClick={() => { setDetailJob(null); setReportData(null) }} aria-hidden />
           <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-xl border border-slate-200/80 overflow-hidden max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-slate-50/80 to-white shrink-0">
@@ -259,6 +483,45 @@ function MyJobs() {
                   <p className="font-medium text-slate-900 mt-0.5">{detailJob.package_name || '—'}</p>
                 </div>
               </div>
+
+              {detailJob.package_id && (
+                <div className="rounded-xl border border-violet-100 bg-violet-50/40 p-4">
+                  <div className="flex items-center gap-2 text-violet-900 font-medium text-sm mb-2">
+                    <Package className="w-4 h-4 shrink-0" />
+                    Package details
+                  </div>
+                  {pkgLoading ? (
+                    <div className="flex items-center gap-2 text-slate-600 text-sm py-2">
+                      <Loader2 className="w-4 h-4 animate-spin text-violet-600" />
+                      Loading details…
+                    </div>
+                  ) : pkgDetail ? (
+                    <div className="space-y-3">
+                      {pkgDetail.description && (
+                        <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{pkgDetail.description}</p>
+                      )}
+                      {pkgDetail.price != null && (
+                        <p className="text-sm font-semibold text-violet-800">
+                          Price: ₹{Number(pkgDetail.price).toLocaleString()}
+                        </p>
+                      )}
+                      {pkgChecklist.length > 0 && (
+                        <div>
+                          <p className="text-xs font-medium text-slate-600 mb-1.5">Areas covered</p>
+                          <ul className="list-disc list-inside text-sm text-slate-700 space-y-0.5">
+                            {pkgChecklist.map((c) => (
+                              <li key={c.id}>{c.area_name}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500">Could not load package details.</p>
+                  )}
+                </div>
+              )}
+
               <div className="border-t border-slate-100 pt-4">
                 <p className="text-sm font-medium text-slate-700 mb-3">Timeline</p>
                 <ul className="space-y-4">

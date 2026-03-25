@@ -21,6 +21,7 @@ from app.inspector.routers import router as inspector_router
 from app.notifications.routers import router as notifications_router
 from app.complaint.routers import router as complaint_router
 from app.feedback.routers import router as feedback_router
+from app.payments.routers import router as payments_router
 
 logging.basicConfig(
     level=os.getenv("LOG_LEVEL", "INFO"),
@@ -78,6 +79,7 @@ app.include_router(inspector_router)
 app.include_router(notifications_router)
 app.include_router(complaint_router)
 app.include_router(feedback_router)
+app.include_router(payments_router)
 
 if UPLOAD_DIR.exists():
     app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")

@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, RefreshCw, Ticket, MapPin, User, Calendar, ChevronRight, Inbox } from 'lucide-react'
+import { RefreshCw, Ticket, MapPin, ChevronRight, Inbox, UserCheck } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { createJobticketApi } from '../../services/requests/CreateJobticket'
-import CreateJobticketModal from './CreateJobticketModal'
+import AssignInspectorModal from './AssignInspectorModal'
 
 function StatusBadge({ status }) {
   const s = (status ?? '').toLowerCase()
@@ -30,7 +30,7 @@ function JobTickets() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState(null)
-  const [createModalOpen, setCreateModalOpen] = useState(false)
+  const [assignTicket, setAssignTicket] = useState(null)
 
   const fetchTickets = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true)
@@ -62,7 +62,7 @@ function JobTickets() {
           <p className="text-slate-500 text-sm mt-1">
             {isInspector
               ? 'Your assigned inspections — open a job to start and complete it'
-              : 'Create and track inspection job tickets'}
+              : 'Assign pending jobs to inspectors from the list below.'}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -75,15 +75,6 @@ function JobTickets() {
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
             Refresh
           </button>
-          {isAdmin && (
-            <button
-              type="button"
-              onClick={() => setCreateModalOpen(true)}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 shadow-sm shrink-0"
-            >
-              <Plus className="w-4 h-4" /> Create ticket
-            </button>
-          )}
         </div>
       </div>
 
@@ -124,7 +115,7 @@ function JobTickets() {
             </span>
             <p className="font-semibold text-slate-700">No job tickets yet</p>
             <p className="text-sm mt-1 text-slate-500 max-w-sm text-center">
-              {isInspector ? 'When jobs are assigned to you, they will appear here.' : 'Create a ticket to assign a schedule to an inspector.'}
+              {isInspector ? 'When jobs are assigned to you, they will appear here.' : 'Pending schedules will appear here once owners book inspections.'}
             </p>
           </div>
         )}
@@ -170,13 +161,28 @@ function JobTickets() {
                       {row.assigned_at ? new Date(row.assigned_at).toLocaleDateString(undefined, { dateStyle: 'medium' }) : '—'}
                     </td>
                     <td className="py-4 px-6 text-right">
-                      <Link
-                        to={`/dashboard/jobtickets/${row.id}`}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition"
-                      >
-                        View job
-                        <ChevronRight className="w-4 h-4" />
-                      </Link>
+                      <div className="flex flex-wrap items-center justify-end gap-2">
+                        {isAdmin &&
+                          (row.status ?? '').toLowerCase() === 'pending' &&
+                          !row.inspector_id &&
+                          row.schedule?.id && (
+                            <button
+                              type="button"
+                              onClick={() => setAssignTicket(row)}
+                              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-violet-200 text-violet-700 text-sm font-medium hover:bg-violet-50 transition"
+                            >
+                              <UserCheck className="w-4 h-4" />
+                              Assign
+                            </button>
+                          )}
+                        <Link
+                          to={`/dashboard/jobtickets/${row.id}`}
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition"
+                        >
+                          View job
+                          <ChevronRight className="w-4 h-4" />
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -186,9 +192,10 @@ function JobTickets() {
         )}
       </div>
 
-      <CreateJobticketModal
-        isOpen={createModalOpen}
-        onClose={() => setCreateModalOpen(false)}
+      <AssignInspectorModal
+        ticket={assignTicket}
+        isOpen={!!assignTicket}
+        onClose={() => setAssignTicket(null)}
         onSuccess={fetchTickets}
       />
     </div>

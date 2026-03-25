@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime, date
 from uuid import UUID
 from typing import Optional, Any
@@ -39,17 +39,25 @@ class InspectionScheduleResponse(InspectionScheduleBase):
 class OwnerJobItem(BaseModel):
     """One job (schedule) for owner with optional assignment and inspection status."""
     schedule_id: UUID
+    package_id: UUID
     scheduled_date: date
     property_address: str
     package_name: str
+    package_price: Optional[int] = None
     schedule_status: str
     created_at: datetime
     job_ticket_id: Optional[UUID] = None
     job_ticket_status: Optional[str] = None
     inspector_name: Optional[str] = None
     inspection_status: Optional[str] = None
+    payment_status: Optional[str] = None
+    payment_submitted_at: Optional[datetime] = None
+    payment_verified_at: Optional[datetime] = None
     assigned_at: Optional[datetime] = None
     inspection_completed_at: Optional[datetime] = None
+    inspection_id: Optional[UUID] = None
+    inspector_id: Optional[UUID] = None
+    has_owner_review: bool = False
 
 # JobTickets Schemas
 class JobTicketBase(BaseModel):
@@ -71,6 +79,8 @@ class JobTicketResponse(JobTicketBase):
 class PropertySummary(BaseModel):
     id: UUID
     address: str
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     class Config:
         from_attributes = True
 
@@ -79,6 +89,8 @@ class OwnerSummary(BaseModel):
     id: UUID
     full_name: str
     email: str
+    phone: Optional[str] = None
+    country: Optional[str] = None
     class Config:
         from_attributes = True
 
@@ -87,6 +99,7 @@ class InspectorSummary(BaseModel):
     id: UUID
     full_name: str
     email: str
+    phone: Optional[str] = None
     class Config:
         from_attributes = True
 
@@ -94,6 +107,8 @@ class InspectorSummary(BaseModel):
 class PackageSummary(BaseModel):
     id: UUID
     name: str
+    description: str
+    price: int
     class Config:
         from_attributes = True
 
@@ -119,7 +134,27 @@ class JobTicketResponseWithRelations(JobTicketBase):
     assigned_at: Optional[datetime] = None
     schedule: Optional[ScheduleWithRelations] = None
     inspector: Optional[InspectorSummary] = None
-    inspections: Optional[list["InspectionResponse"]] = None
+    inspections: Optional[list["InspectionWithGeoResponse"]] = None
+    class Config:
+        from_attributes = True
+
+
+# Geo verification (declared before inspection detail response used on job tickets)
+class GeoVerificationBase(BaseModel):
+    inspection_id: UUID
+    latitude: float
+    longitude: float
+    distance_from_property: float
+    verified: bool
+
+
+class GeoVerificationCreate(GeoVerificationBase):
+    pass
+
+
+class GeoVerificationResponse(GeoVerificationBase):
+    id: UUID
+    verified_at: datetime
     class Config:
         from_attributes = True
 
@@ -141,27 +176,22 @@ class InspectionResponse(InspectionBase):
     class Config:
         from_attributes = True
 
+
+class InspectionWithGeoResponse(InspectionBase):
+    """Inspection as returned on job ticket detail (includes geo verification when loaded)."""
+
+    id: UUID
+    geo_verifications: Optional[list[GeoVerificationResponse]] = Field(
+        default=None,
+        validation_alias="geo_verification_logs",
+    )
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+
 class InspectionUpdate(BaseModel):
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
     overall_status: Optional[str] = None
-    class Config:
-        from_attributes = True
-
-# GeoVerification Schemas
-class GeoVerificationBase(BaseModel):
-    inspection_id: UUID
-    latitude: float
-    longitude: float
-    distance_from_property: float
-    verified: bool
-
-class GeoVerificationCreate(GeoVerificationBase):
-    pass
-
-class GeoVerificationResponse(GeoVerificationBase):
-    id: UUID
-    verified_at: datetime
     class Config:
         from_attributes = True
 
@@ -177,6 +207,11 @@ class ChecklistResponse(ChecklistBase):
     id: UUID
     class Config:
         from_attributes = True
+
+
+class ChecklistUpdate(BaseModel):
+    """Admin: rename checklist area (template item)."""
+    area_name: Optional[str] = None
 
 # InspectionChecklistResults Schemas
 class InspectionChecklistResultBase(BaseModel):

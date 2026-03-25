@@ -11,9 +11,10 @@ import {
   ClipboardList,
   Clock,
   CheckCircle,
-  BellRing,
   MessageSquare,
   Activity,
+  LayoutDashboard,
+  Package,
 } from 'lucide-react'
 
 import { useAuth } from '../../context/AuthContext'
@@ -54,6 +55,7 @@ const ownerQuickActions = [
   { label: 'Schedule inspection', to: '/dashboard/my-jobs', icon: Calendar },
   { label: 'Add property', to: '/dashboard/properties', icon: Home },
   { label: 'My Jobs', to: '/dashboard/my-jobs', icon: ClipboardList },
+  { label: 'Packages', to: '/dashboard/packages', icon: Package },
 ]
 
 const inspectorStatsKeys = [
@@ -64,8 +66,8 @@ const inspectorStatsKeys = [
 
 const inspectorQuickActions = [
   { label: 'Job tickets', to: '/dashboard/jobtickets', icon: Ticket },
-  { label: 'Notifications', to: '/dashboard/notifications', icon: BellRing },
   { label: 'Feedback', to: '/dashboard/feedback', icon: MessageSquare },
+  { label: 'Overview', to: '/dashboard', icon: LayoutDashboard },
 ]
 
 function getJobStage(row) {

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
-import { UserCog, Loader2, CheckCircle, XCircle } from 'lucide-react'
+import { UserCog, Loader2, CheckCircle, XCircle, Eye } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { inspectorServices } from '../../services/requests/inspectorServices'
+import InspectorProfileModal from './InspectorProfileModal'
 
 function Inspector() {
   const { user } = useAuth()
@@ -9,8 +10,15 @@ function Inspector() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [actingId, setActingId] = useState(null)
+  const [profileOpen, setProfileOpen] = useState(false)
+  const [profileInspector, setProfileInspector] = useState(null)
 
   const isAdmin = user?.role === 'admin'
+
+  const openProfile = (row) => {
+    setProfileInspector({ id: row.id, name: row.full_name })
+    setProfileOpen(true)
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -118,7 +126,7 @@ function Inspector() {
                   <th className="py-4 px-6">Email</th>
                   <th className="py-4 px-6">Phone</th>
                   <th className="py-4 px-6">Status</th>
-                  {isAdmin && <th className="py-4 px-6 w-44 text-right">Actions</th>}
+                  {isAdmin && <th className="py-4 px-6 text-right min-w-[12rem]">Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -142,30 +150,40 @@ function Inspector() {
                     </td>
                     {isAdmin && (
                       <td className="py-4 px-6 text-right">
-                        {row.status === 'pending' && (
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => handleApprove(row.id)}
-                              disabled={!!actingId}
-                              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 transition"
-                            >
-                              {actingId === row.id ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                              ) : (
-                                <CheckCircle className="w-4 h-4" />
-                              )}
-                              Approve
-                            </button>
-                            <button
-                              onClick={() => handleReject(row.id)}
-                              disabled={!!actingId}
-                              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-red-200 bg-red-50 text-red-700 text-sm font-medium hover:bg-red-100 disabled:opacity-50 transition"
-                            >
-                              <XCircle className="w-4 h-4" />
-                              Reject
-                            </button>
-                          </div>
-                        )}
+                        <div className="flex flex-wrap items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openProfile(row)}
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-800 text-sm font-medium hover:bg-slate-50 transition"
+                          >
+                            <Eye className="w-4 h-4" />
+                            View profile
+                          </button>
+                          {row.status === 'pending' && (
+                            <>
+                              <button
+                                onClick={() => handleApprove(row.id)}
+                                disabled={!!actingId}
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 transition"
+                              >
+                                {actingId === row.id ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <CheckCircle className="w-4 h-4" />
+                                )}
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => handleReject(row.id)}
+                                disabled={!!actingId}
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-red-200 bg-red-50 text-red-700 text-sm font-medium hover:bg-red-100 disabled:opacity-50 transition"
+                              >
+                                <XCircle className="w-4 h-4" />
+                                Reject
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </td>
                     )}
                   </tr>
@@ -175,6 +193,16 @@ function Inspector() {
           </div>
         )}
       </div>
+
+      <InspectorProfileModal
+        isOpen={profileOpen}
+        onClose={() => {
+          setProfileOpen(false)
+          setProfileInspector(null)
+        }}
+        inspectorId={profileInspector?.id}
+        inspectorName={profileInspector?.name}
+      />
     </div>
   )
 }

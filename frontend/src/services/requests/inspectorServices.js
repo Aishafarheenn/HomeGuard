@@ -20,6 +20,12 @@ export const inspectorServices = {
     return response.data
   },
 
+  /** Admin only: profile with job summary and ratings */
+  getInspectorProfile: async (inspectorId) => {
+    const response = await api.get(endpoint.inspector.profile(inspectorId))
+    return response.data
+  },
+
   /** Admin only: approve inspector */
   approveInspector: async (inspectorId) => {
     const response = await api.patch(endpoint.inspector.approve(inspectorId))

@@ -355,21 +355,27 @@ def create_inspection(
     current_user: CurrentUser = Depends(get_current_user),
 ):
     """
-    Admin/Inspector: create inspections.
-    Inspectors must send latitude/longitude for geo-verification (start only when at property).
-    Owner is not allowed to create inspections directly.
+    Inspectors only: create an inspection (start a job).
+    Latitude/longitude are required for geo-verification at the property.
+    Admins cannot start jobs on behalf of inspectors.
     """
-    if current_user.role not in {"admin", "inspector"}:
+    if current_user.role != "inspector":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not allowed to create inspections",
+            detail="Only inspectors can start inspections.",
         )
-    if current_user.role == "inspector" and (
-        inspection_data.latitude is None or inspection_data.longitude is None
-    ):
+    if inspection_data.latitude is None or inspection_data.longitude is None:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Location is required to start an inspection. Enable location access and try again.",
+        )
+    job_ticket = inspection_services.get_jobticket_by_id(
+        inspection_data.job_ticket_id, db
+    )
+    if job_ticket.inspector_id is None or job_ticket.inspector_id != current_user.user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only start inspections for jobs assigned to you.",
         )
     try:
         return inspection_services.create_inspection(inspection_data, db)
@@ -452,16 +458,24 @@ def create_geo_verification(geo_data: inspection_schemas.GeoVerificationCreate, 
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-# Checklist Routes
+# Checklist Routes (template items per package)
 @router.get("/checklists", response_model=list[inspection_schemas.ChecklistResponse])
-def get_all_checklists(db: Session = Depends(get_db)):
+def get_all_checklists(
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """Authenticated: list all checklist template rows (admin tooling may use)."""
     try:
         return inspection_services.get_all_checklists(db)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 @router.get("/checklists/{checklist_id}", response_model=inspection_schemas.ChecklistResponse)
-def get_checklist(checklist_id: UUID, db: Session = Depends(get_db)):
+def get_checklist(
+    checklist_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(get_current_user),
+):
     try:
         return inspection_services.get_checklist_by_id(checklist_id, db)
     except HTTPException:
@@ -470,9 +484,45 @@ def get_checklist(checklist_id: UUID, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 @router.post("/checklists", response_model=inspection_schemas.ChecklistResponse, status_code=status.HTTP_201_CREATED)
-def create_checklist(checklist_data: inspection_schemas.ChecklistCreate, db: Session = Depends(get_db)):
+def create_checklist(
+    checklist_data: inspection_schemas.ChecklistCreate,
+    db: Session = Depends(get_db),
+    current_admin: CurrentUser = Depends(get_current_admin),
+):
+    """Admin only: add a checklist area to a package."""
     try:
         return inspection_services.create_checklist(checklist_data, db)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@router.patch("/checklists/{checklist_id}", response_model=inspection_schemas.ChecklistResponse)
+def update_checklist_item(
+    checklist_id: UUID,
+    update_data: inspection_schemas.ChecklistUpdate,
+    db: Session = Depends(get_db),
+    current_admin: CurrentUser = Depends(get_current_admin),
+):
+    """Admin only: rename a checklist template item."""
+    try:
+        return inspection_services.update_checklist(checklist_id, update_data, db)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@router.delete("/checklists/{checklist_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_checklist_item(
+    checklist_id: UUID,
+    db: Session = Depends(get_db),
+    current_admin: CurrentUser = Depends(get_current_admin),
+):
+    """Admin only: delete a checklist template item if unused by inspections."""
+    try:
+        inspection_services.delete_checklist(checklist_id, db)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 

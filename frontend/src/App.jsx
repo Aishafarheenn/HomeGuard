@@ -17,8 +17,9 @@ import JobTicketDetail from './screens/dashboard/JobTicketDetail'
 import Inspector from './screens/dashboard/Inspector'
 import Complaint from './screens/dashboard/Complaint'
 import Feedback from './screens/dashboard/Feedback'
-import Notifications from './screens/dashboard/Notifications'
 import MyJobs from './screens/dashboard/MyJobs'
+import Payments from './screens/dashboard/Payments'
+import OwnerPackages from './screens/dashboard/OwnerPackages'
 import NotFoundPage from './screens/NotFoundPage'
 
 function App() {
@@ -72,6 +73,22 @@ function App() {
               }
             />
             <Route
+              path="packages"
+              element={
+                <ProtectedRoute allowedRoles={['owner']}>
+                  <OwnerPackages />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="payments"
+              element={
+                <ProtectedRoute allowedRoles={['owner', 'admin']}>
+                  <Payments />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="jobtickets/:ticketId"
               element={
                 <ProtectedRoute allowedRoles={['admin', 'inspector']}>
@@ -95,8 +112,15 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="notifications" element={<Notifications />} />
-            <Route path="complaints" element={<Complaint />} />
+            <Route path="notifications" element={<Navigate to="/dashboard" replace />} />
+            <Route
+              path="complaints"
+              element={
+                <ProtectedRoute allowedRoles={['admin', 'owner']}>
+                  <Complaint />
+                </ProtectedRoute>
+              }
+            />
             <Route path="feedback" element={<Feedback />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>

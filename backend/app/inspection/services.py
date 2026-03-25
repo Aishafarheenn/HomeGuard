@@ -9,9 +9,11 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.inspection import models as inspection_models
 from app.inspection import schemas as inspection_schemas
+from app.payments import models as payment_models
+from app.payments import services as payment_services
 
 # Max distance (meters) from property for inspector to start inspection (GeoShield).
-GEO_MAX_RADIUS_METERS = 150
+GEO_MAX_RADIUS_METERS = 10000
 
 
 def _haversine_meters(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -105,9 +107,11 @@ def get_owner_jobs(owner_id: UUID, db: Session):
         for s in schedules:
             item = {
                 "schedule_id": s.id,
+                "package_id": s.package_id,
                 "scheduled_date": s.scheduled_date,
                 "property_address": s.property.address if s.property else "",
                 "package_name": s.package.name if s.package else "",
+                "package_price": s.package.price if s.package else None,
                 "schedule_status": s.status,
                 "created_at": s.created_at,
                 "job_ticket_id": None,
@@ -116,22 +120,83 @@ def get_owner_jobs(owner_id: UUID, db: Session):
                 "inspection_status": None,
                 "assigned_at": None,
                 "inspection_completed_at": None,
+                "inspection_id": None,
+                "inspector_id": None,
+                "has_owner_review": False,
             }
             if s.job_tickets:
                 jt = s.job_tickets[0]
                 item["job_ticket_id"] = jt.id
                 item["job_ticket_status"] = jt.status
                 item["assigned_at"] = jt.assigned_at
+                if jt.inspector_id:
+                    item["inspector_id"] = jt.inspector_id
                 if jt.inspector:
                     item["inspector_name"] = jt.inspector.full_name
                 if jt.inspections:
                     _ts = lambda i: i.end_time or i.start_time or datetime(1970, 1, 1, tzinfo=timezone.utc)
                     latest = max(jt.inspections, key=_ts)
                     item["inspection_status"] = latest.overall_status
+                    item["inspection_id"] = latest.id
                     if (latest.overall_status or "").lower() == "completed":
                         item["inspection_completed_at"] = latest.end_time or latest.start_time
-            result.append(inspection_schemas.OwnerJobItem(**item))
-        return result
+            item["payment_status"] = None
+            item["payment_submitted_at"] = None
+            item["payment_verified_at"] = None
+            result.append(item)
+
+        # Latest payment status per schedule (manual/offline payments)
+        schedule_ids = [it["schedule_id"] for it in result]
+        if schedule_ids:
+            payments = (
+                db.query(payment_models.Payment)
+                .filter(
+                    payment_models.Payment.owner_id == owner_id,
+                    payment_models.Payment.schedule_id.in_(schedule_ids),
+                )
+                .order_by(payment_models.Payment.submitted_at.desc())
+                .all()
+            )
+            latest_by_schedule = {}
+            for p in payments:
+                sid = p.schedule_id
+                if sid not in latest_by_schedule:
+                    latest_by_schedule[sid] = p
+
+            for it in result:
+                p = latest_by_schedule.get(it["schedule_id"])
+                if p:
+                    it["payment_status"] = p.status
+                    it["payment_submitted_at"] = p.submitted_at
+                    it["payment_verified_at"] = p.verified_at
+                else:
+                    it["payment_status"] = "unpaid"
+                    it["payment_submitted_at"] = None
+                    it["payment_verified_at"] = None
+
+        from app.feedback import models as feedback_models
+
+        completed_inspection_ids = [
+            it["inspection_id"]
+            for it in result
+            if it.get("inspection_id")
+            and (it.get("inspection_status") or "").lower() == "completed"
+        ]
+        reviewed_set = set()
+        if completed_inspection_ids:
+            q = (
+                db.query(feedback_models.InspectionReview.inspection_id)
+                .filter(feedback_models.InspectionReview.inspection_id.in_(completed_inspection_ids))
+                .all()
+            )
+            reviewed_set = {row[0] for row in q}
+
+        for it in result:
+            iid = it.get("inspection_id")
+            if iid and (it.get("inspection_status") or "").lower() == "completed":
+                it["has_owner_review"] = iid in reviewed_set
+
+        return [inspection_schemas.OwnerJobItem(**item) for item in result]
     except SQLAlchemyError as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -274,7 +339,9 @@ def _jobticket_list_options():
         selectinload(inspection_models.JobTickets.schedule).selectinload(inspection_models.InspectionSchedule.owner),
         selectinload(inspection_models.JobTickets.schedule).selectinload(inspection_models.InspectionSchedule.package),
         selectinload(inspection_models.JobTickets.inspector),
-        selectinload(inspection_models.JobTickets.inspections),
+        selectinload(inspection_models.JobTickets.inspections).selectinload(
+            inspection_models.Inspection.geo_verification_logs
+        ),
     ]
 
 
@@ -325,6 +392,18 @@ def create_jobticket(ticket_data: inspection_schemas.JobTicketCreate, db: Sessio
     try:
         schedule_id = ticket_data.schedule_id
         inspector_id = getattr(ticket_data, "inspector_id", None)
+
+        # Workflow gate: assign inspector only after payment is verified for the schedule.
+        if inspector_id is not None:
+            verified_payment = payment_services.get_verified_payment_for_schedule(
+                schedule_id, db
+            )
+            if not verified_payment:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Payment not verified for this schedule. Please ask the owner to submit payment and admin to verify before assigning an inspector.",
+                )
+
         existing_pending = (
             db.query(inspection_models.JobTickets)
             .filter(
@@ -333,9 +412,38 @@ def create_jobticket(ticket_data: inspection_schemas.JobTicketCreate, db: Sessio
             )
             .first()
         )
-        if existing_pending and inspector_id:
+        existing_assigned = (
+            db.query(inspection_models.JobTickets)
+            .filter(
+                inspection_models.JobTickets.schedule_id == schedule_id,
+                inspection_models.JobTickets.inspector_id.isnot(None),
+            )
+            .order_by(inspection_models.JobTickets.assigned_at.desc())
+            .first()
+        )
+
+        if existing_assigned and inspector_id:
+            if (existing_assigned.status or "").lower() == "completed":
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Job is completed and cannot be reassigned.",
+                )
+            existing_assigned.inspector_id = inspector_id
+            existing_assigned.status = (
+                ticket_data.status
+                if getattr(ticket_data, "status", None)
+                else existing_assigned.status
+            ) or "assigned"
+            db.commit()
+            db.refresh(existing_assigned)
+            new_ticket = existing_assigned
+        elif existing_pending and inspector_id:
             existing_pending.inspector_id = inspector_id
-            existing_pending.status = ticket_data.status if getattr(ticket_data, "status", None) else "assigned"
+            existing_pending.status = (
+                ticket_data.status
+                if getattr(ticket_data, "status", None)
+                else "assigned"
+            )
             db.commit()
             db.refresh(existing_pending)
             new_ticket = existing_pending
@@ -702,6 +810,76 @@ def create_checklist(checklist_data: inspection_schemas.ChecklistCreate, db: Ses
     except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid foreign key or duplicate data")
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error: {str(e)}")
+
+
+def update_checklist(
+    checklist_id: UUID,
+    update_data: inspection_schemas.ChecklistUpdate,
+    db: Session,
+):
+    try:
+        checklist = (
+            db.query(inspection_models.Checklist)
+            .filter(inspection_models.Checklist.id == checklist_id)
+            .first()
+        )
+        if not checklist:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Checklist item not found")
+        data = update_data.model_dump(exclude_unset=True)
+        if not data:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No fields to update")
+        if "area_name" in data and data["area_name"] is not None:
+            name = data["area_name"].strip() if isinstance(data["area_name"], str) else str(data["area_name"])
+            if not name:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="area_name cannot be empty")
+            checklist.area_name = name
+        db.commit()
+        db.refresh(checklist)
+        return checklist
+    except HTTPException:
+        raise
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error: {str(e)}")
+
+
+def delete_checklist(checklist_id: UUID, db: Session):
+    """Delete a checklist template item if no inspection results or evidence reference it."""
+    from app.reports import models as reports_models
+
+    try:
+        checklist = (
+            db.query(inspection_models.Checklist)
+            .filter(inspection_models.Checklist.id == checklist_id)
+            .first()
+        )
+        if not checklist:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Checklist item not found")
+
+        result_count = (
+            db.query(inspection_models.InspectionChecklistResults)
+            .filter(inspection_models.InspectionChecklistResults.checklist_item_id == checklist_id)
+            .count()
+        )
+        evidence_count = (
+            db.query(reports_models.Evidence)
+            .filter(reports_models.Evidence.checklist_item_id == checklist_id)
+            .count()
+        )
+        if result_count > 0 or evidence_count > 0:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Cannot delete: this checklist item is used in inspection results or evidence. Remove or archive those first.",
+            )
+
+        db.delete(checklist)
+        db.commit()
+        return None
+    except HTTPException:
+        raise
     except SQLAlchemyError as e:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error: {str(e)}")

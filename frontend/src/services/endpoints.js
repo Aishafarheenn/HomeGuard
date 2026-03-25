@@ -20,6 +20,7 @@ export const endpoint = {
     create: `${BASE_URL}/inspectors`,
     list: `${BASE_URL}/inspectors`,
     getOne: (id) => `${BASE_URL}/inspectors/${id}`,
+    profile: (id) => `${BASE_URL}/inspectors/${id}/profile`,
     approve: (id) => `${BASE_URL}/inspectors/${id}/approve`,
     reject: (id) => `${BASE_URL}/inspectors/${id}/reject`,
   },
@@ -35,7 +36,10 @@ export const endpoint = {
     jobtickets: `${BASE_URL}/inspection/jobtickets`,
     jobticketOne: (id) => `${BASE_URL}/inspection/jobtickets/${id}`,
     packages: `${BASE_URL}/inspection/packages`,
+    packageOne: (packageId) => `${BASE_URL}/inspection/packages/${packageId}`,
     packageChecklistItems: (packageId) => `${BASE_URL}/inspection/packages/${packageId}/checklist-items`,
+    checklists: `${BASE_URL}/inspection/checklists`,
+    checklistOne: (id) => `${BASE_URL}/inspection/checklists/${id}`,
     checklistResults: `${BASE_URL}/inspection/checklist-results`,
     checklistResultOne: (id) => `${BASE_URL}/inspection/checklist-results/${id}`,
   },
@@ -74,11 +78,13 @@ export const endpoint = {
   Complaint: {
     create: `${BASE_URL}/complaints/complaints`,
     get: `${BASE_URL}/complaints/complaints`,
+    respond: (id) => `${BASE_URL}/complaints/complaints/${id}/response`,
   },
 
   Feedback: {
     create: `${BASE_URL}/feedback/feedback`,
     get: `${BASE_URL}/feedback/feedback`,
+    inspectionReviews: `${BASE_URL}/feedback/inspection-reviews`,
   },
 
   notifications: {
@@ -87,5 +93,13 @@ export const endpoint = {
     read: (id) => `${BASE_URL}/notifications/${id}/read`,
     markAllRead: `${BASE_URL}/notifications/mark-all-read`,
     delete: (id) => `${BASE_URL}/notifications/${id}`,
+  },
+
+  payments: {
+    submit: `${BASE_URL}/payments`,
+    my: `${BASE_URL}/payments/my`,
+    list: `${BASE_URL}/payments`,
+    verify: (id) => `${BASE_URL}/payments/${id}/verify`,
+    reject: (id) => `${BASE_URL}/payments/${id}/reject`,
   },
 }

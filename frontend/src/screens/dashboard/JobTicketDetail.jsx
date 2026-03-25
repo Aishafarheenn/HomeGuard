@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, Play, CheckCircle, Loader2, FileText, Save, MapPin, User, Package, Calendar, ClipboardList, Camera, Video, Image, AlertTriangle, Plus } from 'lucide-react'
+import { ArrowLeft, Play, CheckCircle, Loader2, FileText, Save, MapPin, User, Package, Calendar, ClipboardList, Camera, Video, Image, AlertTriangle, Plus, Phone, Mail, Navigation2, UserCircle2 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { createJobticketApi } from '../../services/requests/CreateJobticket'
 import { inspectionServices, reportServices } from '../../services/requests/inspectionServices'
@@ -114,7 +114,8 @@ function JobTicketDetail() {
   const { ticketId } = useParams()
   const { user } = useAuth()
   const isInspector = user?.role === 'inspector'
-  const canUpdate = user?.role === 'admin' || isInspector
+  const isAdmin = user?.role === 'admin'
+  const canUpdate = isAdmin || isInspector
 
   const [ticket, setTicket] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -252,28 +253,25 @@ function JobTicketDetail() {
     setError(null)
     try {
       const now = new Date().toISOString()
-      const payload = {
+      const position = await new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+          reject(new Error('Location is not supported by your browser.'))
+          return
+        }
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 0,
+        })
+      })
+      await inspectionServices.createInspection({
         job_ticket_id: ticket.id,
         start_time: now,
         end_time: now,
         overall_status: 'in_progress',
-      }
-      if (isInspector) {
-        const position = await new Promise((resolve, reject) => {
-          if (!navigator.geolocation) {
-            reject(new Error('Location is not supported by your browser.'))
-            return
-          }
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: true,
-            timeout: 15000,
-            maximumAge: 0,
-          })
-        })
-        payload.latitude = position.coords.latitude
-        payload.longitude = position.coords.longitude
-      }
-      await inspectionServices.createInspection(payload)
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+      })
       await fetchTicket()
     } catch (err) {
       const msg = err.response?.data?.detail ?? err.message ?? 'Failed to start job'
@@ -459,16 +457,228 @@ function JobTicketDetail() {
             </div>
           </div>
 
+          {ticket && (
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-5 md:p-6 space-y-6">
+              <h3 className="text-sm font-semibold text-slate-800 uppercase tracking-wide">Job overview</h3>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Schedule details</p>
+                  <dl className="space-y-3 text-sm">
+                    {ticket.schedule && (
+                      <>
+                        <div>
+                          <dt className="text-slate-500">Schedule status</dt>
+                          <dd className="mt-0.5 text-slate-900 capitalize">{ticket.schedule.status ?? '—'}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-slate-500">Frequency</dt>
+                          <dd className="mt-0.5 text-slate-900 capitalize">{ticket.schedule.frequency ?? '—'}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-slate-500">Request created</dt>
+                          <dd className="mt-0.5 text-slate-900">
+                            {ticket.schedule.created_at
+                              ? new Date(ticket.schedule.created_at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+                              : '—'}
+                          </dd>
+                        </div>
+                      </>
+                    )}
+                  </dl>
+                </div>
+
+                <div className="space-y-4">
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide flex items-center gap-2">
+                    <User className="w-3.5 h-3.5" /> Assigned inspector
+                  </p>
+                  {ticket.inspector ? (
+                    <dl className="space-y-3 text-sm">
+                      <div>
+                        <dt className="text-slate-500">Name</dt>
+                        <dd className="mt-0.5 font-medium text-slate-900">{ticket.inspector.full_name}</dd>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <Mail className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                        <div>
+                          <dt className="text-slate-500 text-xs">Email</dt>
+                          <dd>
+                            <a href={`mailto:${ticket.inspector.email}`} className="text-violet-700 hover:underline break-all">
+                              {ticket.inspector.email}
+                            </a>
+                          </dd>
+                        </div>
+                      </div>
+                      {ticket.inspector.phone && (
+                        <div className="flex items-start gap-2">
+                          <Phone className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                          <div>
+                            <dt className="text-slate-500 text-xs">Phone</dt>
+                            <dd>
+                              <a href={`tel:${ticket.inspector.phone}`} className="text-slate-900">
+                                {ticket.inspector.phone}
+                              </a>
+                            </dd>
+                          </div>
+                        </div>
+                      )}
+                    </dl>
+                  ) : (
+                    <p className="text-sm text-slate-500">No inspector assigned yet.</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2 border-t border-slate-200/80">
+                <div className="space-y-3">
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide flex items-center gap-2">
+                    <MapPin className="w-3.5 h-3.5" /> Property
+                  </p>
+                  <p className="text-sm font-medium text-slate-900">{ticket.schedule?.property?.address ?? '—'}</p>
+                  {ticket.schedule?.property?.latitude != null && ticket.schedule?.property?.longitude != null && (
+                    <div className="flex flex-wrap items-center gap-3 text-sm">
+                      <span className="text-slate-600 font-mono text-xs">
+                        {Number(ticket.schedule.property.latitude).toFixed(5)}, {Number(ticket.schedule.property.longitude).toFixed(5)}
+                      </span>
+                      <a
+                        href={`https://www.google.com/maps?q=${ticket.schedule.property.latitude},${ticket.schedule.property.longitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-violet-600 hover:text-violet-700 font-medium"
+                      >
+                        <Navigation2 className="w-4 h-4" /> Open in Maps
+                      </a>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide flex items-center gap-2">
+                    <UserCircle2 className="w-3.5 h-3.5" /> Owner contact
+                  </p>
+                  {ticket.schedule?.owner ? (
+                    <dl className="space-y-2 text-sm">
+                      <div>
+                        <dt className="text-slate-500 text-xs">Name</dt>
+                        <dd className="font-medium text-slate-900">{ticket.schedule.owner.full_name}</dd>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <Mail className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                        <div>
+                          <dt className="text-slate-500 text-xs">Email</dt>
+                          <dd>
+                            <a href={`mailto:${ticket.schedule.owner.email}`} className="text-violet-700 hover:underline break-all">
+                              {ticket.schedule.owner.email}
+                            </a>
+                          </dd>
+                        </div>
+                      </div>
+                      {ticket.schedule.owner.phone && (
+                        <div className="flex items-start gap-2">
+                          <Phone className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                          <div>
+                            <dt className="text-slate-500 text-xs">Phone</dt>
+                            <dd>
+                              <a href={`tel:${ticket.schedule.owner.phone}`} className="text-slate-900">
+                                {ticket.schedule.owner.phone}
+                              </a>
+                            </dd>
+                          </div>
+                        </div>
+                      )}
+                      {ticket.schedule.owner.country && (
+                        <p className="text-slate-600 text-sm">
+                          <span className="text-slate-500">Country:</span> {ticket.schedule.owner.country}
+                        </p>
+                      )}
+                    </dl>
+                  ) : (
+                    <p className="text-sm text-slate-500">—</p>
+                  )}
+                </div>
+              </div>
+
+              {ticket.schedule?.package && (
+                <div className="pt-2 border-t border-slate-200/80 space-y-2">
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide flex items-center gap-2">
+                    <Package className="w-3.5 h-3.5" /> Inspection package
+                  </p>
+                  <div className="flex flex-wrap items-baseline gap-2">
+                    <span className="font-semibold text-slate-900">{ticket.schedule.package.name}</span>
+                    {ticket.schedule.package.price != null && (
+                      <span className="text-violet-700 font-semibold">₹{Number(ticket.schedule.package.price).toLocaleString()}</span>
+                    )}
+                  </div>
+                  {ticket.schedule.package.description && (
+                    <p className="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed">{ticket.schedule.package.description}</p>
+                  )}
+                </div>
+              )}
+
+              {Array.isArray(ticket.inspections) && ticket.inspections.length > 0 && (
+                <div className="pt-2 border-t border-slate-200/80 space-y-3">
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide flex items-center gap-2">
+                    <ClipboardList className="w-3.5 h-3.5" /> Inspection history
+                  </p>
+                  <ul className="space-y-3">
+                    {[...ticket.inspections]
+                      .sort((a, b) => {
+                        const ta = new Date(a.start_time || a.end_time || 0).getTime()
+                        const tb = new Date(b.start_time || b.end_time || 0).getTime()
+                        return tb - ta
+                      })
+                      .map((insp) => (
+                        <li
+                          key={insp.id}
+                          className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm space-y-2"
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span className="text-xs font-semibold uppercase text-slate-600">{insp.overall_status ?? '—'}</span>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-700">
+                            <div>
+                              <span className="text-slate-500">Started: </span>
+                              {insp.start_time ? new Date(insp.start_time).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—'}
+                            </div>
+                            <div>
+                              <span className="text-slate-500">Ended: </span>
+                              {insp.end_time ? new Date(insp.end_time).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—'}
+                            </div>
+                          </div>
+                          {insp.geo_verifications && insp.geo_verifications.length > 0 && (
+                            <div className="text-xs text-slate-600 border-t border-slate-100 pt-2 mt-1 space-y-1">
+                              <span className="font-medium text-slate-500">Start location verification</span>
+                              {insp.geo_verifications.map((g) => (
+                                <div key={g.id} className="flex flex-wrap gap-x-3 gap-y-0.5">
+                                  <span>{g.verified ? 'Verified' : 'Not verified'}</span>
+                                  {g.distance_from_property != null && (
+                                    <span>~{Math.round(g.distance_from_property)}m from property</span>
+                                  )}
+                                  {g.verified_at && (
+                                    <span className="text-slate-500">{new Date(g.verified_at).toLocaleString()}</span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
           {error && (
             <div className="rounded-xl bg-red-50 border border-red-100 text-red-700 px-4 py-3 text-sm">
               {error}
             </div>
           )}
 
-          {isAssigned && canUpdate && (
+          {isAssigned && isInspector && (
             <div className="pt-2">
               <div className="p-5 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50">
-                <p className="text-sm text-slate-600 mb-4">Start this job when you begin the inspection.</p>
+                <p className="text-sm text-slate-600 mb-4">Start this job when you begin the inspection at the property (location is verified).</p>
                 <button
                   type="button"
                   onClick={handleStart}
@@ -478,6 +688,16 @@ function JobTicketDetail() {
                   {starting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Play className="w-5 h-5" />}
                   Start job
                 </button>
+              </div>
+            </div>
+          )}
+
+          {isAssigned && isAdmin && (
+            <div className="pt-2">
+              <div className="p-5 rounded-2xl border border-slate-200 bg-slate-50/80">
+                <p className="text-sm text-slate-600">
+                  Only the assigned inspector can start this job from their account. They must be at the property with location enabled.
+                </p>
               </div>
             </div>
           )}
@@ -654,6 +874,33 @@ function JobTicketDetail() {
                     <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Notes</p>
                   </div>
                   <p className="px-4 py-3 text-slate-700 whitespace-pre-wrap text-sm">{reportNotes}</p>
+                </div>
+              )}
+              {evidenceList.length > 0 && (
+                <div className="rounded-xl border border-slate-200 overflow-hidden">
+                  <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-100">
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Evidence</p>
+                  </div>
+                  <ul className="divide-y divide-slate-100">
+                    {evidenceList.map((ev) => (
+                      <li key={ev.id} className="px-4 py-3 flex flex-wrap items-center gap-3 text-sm">
+                        <a
+                          href={ev.media_url.startsWith('http') ? ev.media_url : `${endpoint.BASE_URL}${ev.media_url}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 text-violet-700 hover:underline"
+                        >
+                          {ev.media_type === 'photo' ? <Image className="w-4 h-4" /> : <Video className="w-4 h-4" />}
+                          View {ev.media_type}
+                        </a>
+                        {ev.checklist_item_id && (
+                          <span className="text-slate-500">
+                            - {checklistItems.find((c) => c.id === ev.checklist_item_id)?.area_name ?? 'Checklist item'}
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
             </div>

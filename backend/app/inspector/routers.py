@@ -29,14 +29,14 @@ def get_all_inspectors(
         )
 
 
-@router.get("/{inspector_id}", response_model=inspector_schemas.InspectorResponse)
-def get_inspector(
-    inspector_id: UUID,
+@router.get("/me", response_model=inspector_schemas.InspectorResponse)
+def get_me(
     db: Session = Depends(get_db),
-    current_admin: CurrentUser = Depends(get_current_admin),
+    current_inspector: CurrentUser = Depends(get_current_inspector),
 ):
+    """Inspector: get own profile. Declared before /{inspector_id} so `/me` is not parsed as UUID."""
     try:
-        return inspector_services.get_inspector_by_id(inspector_id, db)
+        return inspector_services.get_inspector_by_id(current_inspector.user_id, db)
     except HTTPException:
         raise
     except Exception as e:
@@ -45,14 +45,34 @@ def get_inspector(
         )
 
 
-@router.get("/me", response_model=inspector_schemas.InspectorResponse)
-def get_me(
+@router.get(
+    "/{inspector_id}/profile",
+    response_model=inspector_schemas.InspectorProfileResponse,
+)
+def get_inspector_profile(
+    inspector_id: UUID,
     db: Session = Depends(get_db),
-    current_inspector: CurrentUser = Depends(get_current_inspector),
+    current_admin: CurrentUser = Depends(get_current_admin),
 ):
-    """Inspector: get own profile."""
+    """Admin only: inspector details, job summary, and owner ratings."""
     try:
-        return inspector_services.get_inspector_by_id(current_inspector.user_id, db)
+        return inspector_services.get_inspector_profile_for_admin(inspector_id, db)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@router.get("/{inspector_id}", response_model=inspector_schemas.InspectorResponse)
+def get_inspector(
+    inspector_id: UUID,
+    db: Session = Depends(get_db),
+    current_admin: CurrentUser = Depends(get_current_admin),
+):
+    try:
+        return inspector_services.get_inspector_by_id(inspector_id, db)
     except HTTPException:
         raise
     except Exception as e:

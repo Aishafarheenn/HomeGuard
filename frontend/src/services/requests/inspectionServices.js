@@ -46,9 +46,38 @@ export const inspectionServices = {
     return response.data
   },
 
+  getPackages: async () => {
+    const response = await api.get(endpoint.inspection.packages)
+    return response.data
+  },
+
+  getPackage: async (packageId) => {
+    const response = await api.get(endpoint.inspection.packageOne(packageId))
+    return response.data
+  },
+
   getChecklistItemsByPackage: async (packageId) => {
     const response = await api.get(endpoint.inspection.packageChecklistItems(packageId))
     return response.data
+  },
+
+  createChecklistItem: async ({ package_id, area_name }) => {
+    const response = await api.post(endpoint.inspection.checklists, {
+      package_id,
+      area_name,
+    })
+    return response.data
+  },
+
+  updateChecklistItem: async (checklistId, { area_name }) => {
+    const response = await api.patch(endpoint.inspection.checklistOne(checklistId), {
+      area_name,
+    })
+    return response.data
+  },
+
+  deleteChecklistItem: async (checklistId) => {
+    await api.delete(endpoint.inspection.checklistOne(checklistId))
   },
 
   getChecklistResultsByInspection: async (inspectionId) => {

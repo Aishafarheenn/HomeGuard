@@ -1,4 +1,5 @@
 from uuid import UUID
+from datetime import datetime, timezone
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -40,8 +41,14 @@ def create_complaints(
     db: Session,
 ):
     try:
+        if current_user.role != "owner":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only property owners can create complaints",
+            )
         name, email = _resolve_user_name_email(current_user.user_id, current_user.role, db)
         new_complaint = complaint_models.Complaint(
+            owner_id=current_user.user_id,
             name=name,
             email=email,
             message=complaint_data.message,
@@ -70,3 +77,42 @@ def get_all_complaints(db: Session):
         return db.query(complaint_models.Complaint).all()
     except SQLAlchemyError as e:
         raise HTTPException(status_code = status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error: {str(e)}")
+
+
+def get_owner_complaints(owner_id: UUID, db: Session):
+    try:
+        return (
+            db.query(complaint_models.Complaint)
+            .filter(complaint_models.Complaint.owner_id == owner_id)
+            .order_by(complaint_models.Complaint.created_at.desc())
+            .all()
+        )
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error: {str(e)}")
+
+
+def respond_complaint(
+    complaint_id: UUID,
+    data: complaint_schemas.ComplaintResponseUpdate,
+    admin_id: UUID,
+    db: Session,
+):
+    try:
+        complaint = (
+            db.query(complaint_models.Complaint)
+            .filter(complaint_models.Complaint.id == complaint_id)
+            .first()
+        )
+        if not complaint:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Complaint not found")
+        complaint.admin_response = data.admin_response.strip()
+        complaint.responded_by = admin_id
+        complaint.responded_at = datetime.now(timezone.utc)
+        db.commit()
+        db.refresh(complaint)
+        return complaint
+    except HTTPException:
+        raise
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error: {str(e)}")

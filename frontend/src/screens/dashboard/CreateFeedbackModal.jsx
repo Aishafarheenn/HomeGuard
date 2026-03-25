@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { X, Star } from "lucide-react";
 import { feedbackService } from "../../services/requests/feedbackService";
 
-function CreateFeedbackModal({ isOpen, onClose }) {
+function CreateFeedbackModal({ isOpen, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({
@@ -33,6 +33,7 @@ function CreateFeedbackModal({ isOpen, onClose }) {
       });
 
       setFormData({ rating: "", comment: "" });
+      onSuccess?.();
     } catch (err) {
       const detail =
         err.response?.data?.detail ??

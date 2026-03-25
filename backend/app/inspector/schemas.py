@@ -31,3 +31,33 @@ class InspectorUpdate(BaseModel):
     approved_by: Optional[UUID] = None
     class Config:
         from_attributes = True
+
+
+class InspectorJobSummary(BaseModel):
+    """Aggregates job tickets assigned to this inspector."""
+
+    total_jobs: int
+    by_status: dict[str, int]
+    completed_inspections: int
+
+
+class InspectorRatingSummary(BaseModel):
+    average_rating: Optional[float] = None
+    review_count: int
+
+
+class InspectorProfileReviewItem(BaseModel):
+    """Owner inspection review (rating) without internal IDs."""
+
+    property_address: Optional[str] = None
+    owner_name: Optional[str] = None
+    rating: int
+    comment: str
+    created_at: datetime
+
+
+class InspectorProfileResponse(BaseModel):
+    inspector: InspectorResponse
+    job_summary: InspectorJobSummary
+    rating_summary: InspectorRatingSummary
+    reviews: list[InspectorProfileReviewItem]
