@@ -51,7 +51,7 @@ function DashboardLayout() {
   const { user, logout } = useAuth()
 
   const roleNavMap = {
-    admin: navItems.filter((item) => item.path !== '/dashboard/my-jobs'),
+    admin: navItems.filter((item) => !['/dashboard/my-jobs', '/dashboard/packages'].includes(item.path)),
     owner: navItems.filter((item) =>
       ['/dashboard', '/dashboard/properties', '/dashboard/my-jobs', '/dashboard/packages', '/dashboard/payments', '/dashboard/complaints', '/dashboard/feedback'].includes(
         item.path
