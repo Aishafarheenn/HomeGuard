@@ -22,6 +22,18 @@ class FeedbackResponse(BaseModel):
         from_attributes = True
 
 
+class FeedbackPublicResponse(BaseModel):
+    """Public-safe feedback for marketing pages (no email)."""
+    id: UUID
+    name: str
+    rating: int
+    comment: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 class InspectionReviewCreate(BaseModel):
     """Owner: rate inspector after inspection is completed."""
     inspection_id: UUID

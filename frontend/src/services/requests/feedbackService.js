@@ -16,6 +16,11 @@ export const feedbackService = {
     return response.data
   },
 
+  getPublicFeedback: async (limit = 6) => {
+    const response = await api.get(endpoint.Feedback.public, { params: { limit } })
+    return response.data
+  },
+
   createInspectionReview: async ({ inspection_id, rating, comment }) => {
     const response = await api.post(endpoint.Feedback.inspectionReviews, {
       inspection_id,

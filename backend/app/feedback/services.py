@@ -79,6 +79,20 @@ def get_all_feedback(db: Session):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail=f"Database error: {str(e)}")
 
 
+def get_public_feedback(db: Session, limit: int = 6):
+    """Public latest feedback list for landing page."""
+    safe_limit = max(1, min(limit, 20))
+    try:
+        return (
+            db.query(feedback_models.Feedback)
+            .order_by(feedback_models.Feedback.created_at.desc())
+            .limit(safe_limit)
+            .all()
+        )
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error: {str(e)}")
+
+
 def _inspection_review_to_response(
     row: feedback_models.InspectionReview, db: Session
 ) -> feedback_schemas.InspectionReviewResponse:

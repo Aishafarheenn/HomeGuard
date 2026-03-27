@@ -84,6 +84,7 @@ export const endpoint = {
   Feedback: {
     create: `${BASE_URL}/feedback/feedback`,
     get: `${BASE_URL}/feedback/feedback`,
+    public: `${BASE_URL}/feedback/public`,
     inspectionReviews: `${BASE_URL}/feedback/inspection-reviews`,
   },
 

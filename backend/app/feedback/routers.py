@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from fastapi import Query
 
 from app.feedback import schemas as feedback_schemas
 from app.feedback import services as feedback_services
@@ -38,6 +39,20 @@ def get_all_feedback(
     """Admin only: list all feedback (model is not user-scoped)."""
     try:
         return feedback_services.get_all_feedback(db)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
+@router.get("/public", response_model=list[feedback_schemas.FeedbackPublicResponse])
+def get_public_feedback(
+    limit: int = Query(default=6, ge=1, le=20),
+    db: Session = Depends(get_db),
+):
+    """Public: latest owner-submitted general feedback (no email)."""
+    try:
+        return feedback_services.get_public_feedback(db, limit=limit)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
