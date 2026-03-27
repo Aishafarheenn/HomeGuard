@@ -1,5 +1,4 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
 
 class ErrorBoundary extends React.Component {
   state = { hasError: false, error: null }
@@ -21,12 +20,12 @@ class ErrorBoundary extends React.Component {
             <p className="text-slate-600 mb-6">
               An unexpected error occurred. Please try again or return to the home page.
             </p>
-            <Link
-              to="/"
+            <a
+              href="/"
               className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-[#A78BFA] text-white font-medium hover:bg-[#9333EA] transition"
             >
               Go to home
-            </Link>
+            </a>
           </div>
         </div>
       )

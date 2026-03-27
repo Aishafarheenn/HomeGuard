@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { MessageSquare, Loader2, Star } from 'lucide-react'
-import CreateFeedbackModal from './CreateFeedbackModal'
 import { feedbackService } from '../../services/requests/feedbackService'
 import { useAuth } from '../../context/AuthContext'
 
@@ -14,7 +13,6 @@ function Feedback() {
   const [inspectionReviews, setInspectionReviews] = useState([])
   const [loading, setLoading] = useState(false)
   const [reviewsLoading, setReviewsLoading] = useState(false)
-  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const fetchFeedbacks = useCallback(async () => {
     if (!isAdmin) return
@@ -69,15 +67,6 @@ function Feedback() {
               : 'Your inspection reviews and general feedback'}
           </p>
         </div>
-        {!isAdmin && (
-          <button
-            type="button"
-            onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-violet-600 text-white font-medium hover:bg-violet-700 shadow-sm shrink-0"
-          >
-            <MessageSquare className="w-4 h-4" /> New feedback
-          </button>
-        )}
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -216,13 +205,6 @@ function Feedback() {
         </div>
       )}
 
-      {isOwner && (
-        <CreateFeedbackModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onSuccess={() => fetchFeedbacks()}
-        />
-      )}
     </div>
   )
 }

@@ -18,6 +18,7 @@ import Inspector from './screens/dashboard/Inspector'
 import Complaint from './screens/dashboard/Complaint'
 import Feedback from './screens/dashboard/Feedback'
 import MyJobs from './screens/dashboard/MyJobs'
+import OwnerJobDetail from './screens/dashboard/OwnerJobDetail'
 import Payments from './screens/dashboard/Payments'
 import OwnerPackages from './screens/dashboard/OwnerPackages'
 import NotFoundPage from './screens/NotFoundPage'
@@ -69,6 +70,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['owner']}>
                   <MyJobs />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="my-jobs/:scheduleId"
+              element={
+                <ProtectedRoute allowedRoles={['owner']}>
+                  <OwnerJobDetail />
                 </ProtectedRoute>
               }
             />

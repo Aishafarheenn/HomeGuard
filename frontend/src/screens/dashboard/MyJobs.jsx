@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react'
-import { ClipboardList, Loader2, MapPin, RefreshCw, Eye, X, CheckCircle, UserPlus, Calendar, FileText, Image, Video, AlertTriangle, Star, CreditCard } from 'lucide-react'
+import { ClipboardList, Loader2, MapPin, RefreshCw, Eye, X, CheckCircle, UserPlus, Calendar, FileText, Image, Video, AlertTriangle, Star, CreditCard, Package, Search } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { inspectionServices } from '../../services/requests/inspectionServices'
 import { feedbackService } from '../../services/requests/feedbackService'
@@ -31,6 +31,7 @@ function MyJobs() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [activeTab, setActiveTab] = useState(TAB_ALL)
+  const [searchTerm, setSearchTerm] = useState('')
   const [detailJob, setDetailJob] = useState(null)
   const [reportData, setReportData] = useState(null)
   const [reportLoading, setReportLoading] = useState(false)
@@ -186,10 +187,32 @@ function MyJobs() {
     { key: TAB_COMPLETED, label: 'Completed' },
   ]
 
+  const tabCounts = {
+    [TAB_ALL]: jobs.length,
+    [TAB_PENDING]: jobs.filter((r) => getJobStage(r) === TAB_PENDING).length,
+    [TAB_ASSIGNED]: jobs.filter((r) => getJobStage(r) === TAB_ASSIGNED).length,
+    [TAB_IN_PROGRESS]: jobs.filter((r) => getJobStage(r) === TAB_IN_PROGRESS).length,
+    [TAB_COMPLETED]: jobs.filter((r) => getJobStage(r) === TAB_COMPLETED).length,
+  }
+
   const filteredJobs = jobs.filter((row) => {
-    if (activeTab === TAB_ALL) return true
-    return getJobStage(row) === activeTab
+    const stageMatches = activeTab === TAB_ALL ? true : getJobStage(row) === activeTab
+    if (!stageMatches) return false
+    if (!searchTerm.trim()) return true
+    const q = searchTerm.trim().toLowerCase()
+    return (
+      String(row.property_address || '').toLowerCase().includes(q) ||
+      String(row.package_name || '').toLowerCase().includes(q) ||
+      String(row.inspector_name || '').toLowerCase().includes(q)
+    )
   })
+
+  const kpis = [
+    { key: 'total', label: 'Total jobs', value: jobs.length, cls: 'bg-violet-100 text-violet-700' },
+    { key: 'pending', label: 'Pending', value: tabCounts[TAB_PENDING], cls: 'bg-amber-100 text-amber-700' },
+    { key: 'progress', label: 'In progress', value: tabCounts[TAB_IN_PROGRESS], cls: 'bg-sky-100 text-sky-700' },
+    { key: 'done', label: 'Completed', value: tabCounts[TAB_COMPLETED], cls: 'bg-emerald-100 text-emerald-700' },
+  ]
 
   const canRateInspector = (row) => {
     const completed = (row.inspection_status || '').toLowerCase() === 'completed' || !!row.inspection_completed_at
@@ -230,7 +253,7 @@ function MyJobs() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">My Jobs</h1>
           <p className="text-slate-500 text-sm mt-1">
-            View your inspection requests and their status (assignment and completion).
+            Track your inspection lifecycle from scheduling to reports and feedback.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -252,6 +275,17 @@ function MyJobs() {
         </div>
       </div>
 
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {kpis.map((kpi) => (
+          <div key={kpi.key} className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+            <div className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${kpi.cls}`}>
+              {kpi.label}
+            </div>
+            <p className="text-2xl font-bold text-slate-900 mt-3">{kpi.value}</p>
+          </div>
+        ))}
+      </div>
+
       {error && (
         <div className="rounded-xl bg-red-50 border border-red-100 text-red-700 px-4 py-3 text-sm">
           {error}
@@ -269,6 +303,7 @@ function MyJobs() {
               <p className="text-slate-500 text-sm mt-0.5">Schedules you created and their current status</p>
             </div>
           </div>
+          <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
           <div className="flex flex-wrap gap-2">
             {tabs.map(({ key, label }) => (
               <button
@@ -281,9 +316,20 @@ function MyJobs() {
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
-                {label}
+                {label} <span className={`ml-1 ${activeTab === key ? 'text-violet-100' : 'text-slate-500'}`}>({tabCounts[key] ?? 0})</span>
               </button>
             ))}
+          </div>
+          <div className="relative w-full sm:w-80">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search by property, package, inspector"
+              className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-200"
+            />
+          </div>
           </div>
         </div>
         {loading ? (
@@ -301,7 +347,7 @@ function MyJobs() {
           </div>
         ) : filteredJobs.length === 0 ? (
           <div className="py-12 text-center text-slate-500">
-            <p className="font-medium text-slate-600">No jobs in this category.</p>
+            <p className="font-medium text-slate-600">No jobs match your current filters.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -349,10 +395,10 @@ function MyJobs() {
                           )}
                           <button
                             type="button"
-                            onClick={() => setDetailJob(row)}
+                            onClick={() => navigate(`/dashboard/my-jobs/${row.schedule_id}`)}
                             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition"
                           >
-                            <Eye className="w-4 h-4" /> View
+                            <Eye className="w-4 h-4" /> View details
                           </button>
                           {canRateInspector(row) && (
                             <button

@@ -18,8 +18,14 @@ export default function ProtectedRoute({ children, allowedRoles }) {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/" replace />
+  const normalizedUserRole = String(user?.role || '').toLowerCase()
+  const normalizedAllowedRoles = Array.isArray(allowedRoles)
+    ? allowedRoles.map((r) => String(r).toLowerCase())
+    : null
+
+  if (normalizedAllowedRoles && !normalizedAllowedRoles.includes(normalizedUserRole)) {
+    // Keep authenticated users inside dashboard instead of bouncing to landing.
+    return <Navigate to="/dashboard" replace />
   }
 
   return children
